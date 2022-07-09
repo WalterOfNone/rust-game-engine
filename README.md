@@ -1,26 +1,35 @@
-# rust game engine
+# Rust Game Engine
 
-A WIP game infrastructure in rust designed to be performant and memory-safe
+A highly experimental game infrastructure in rust designed to be performant across all platforms
 
 ## Goals:
 
 Fast Performance
+
 Minimal Bugs
+
 Cross Platform Support
+
+Multithreading
+
+GUI overlay
 
 ## Non-Goals:
 
-Full game engine support
+GUI game editor
+
 3D
 
-
-## Installation
+## Usage
 prerequisites:
+
 rust & cargo installed
 
 ```git clone https://git.unl.edu/lquattrocchi2/rust-game-engine```
+
 ```cargo build --release```
+
 ```cargo run --release```
 
 ## License
-not yet
+All code and contributions are licensed under GPL v3.0 unless explicitly marked otherwise
