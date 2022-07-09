@@ -1,7 +1,3 @@
-//TODO:
-//invert y on some stuff
-//fix camera system as a whole
-//perhaps make res completely scaleable?
 pub mod lib;
 use lib::{Object, Pixel, Camera};
 use log::error;
@@ -57,15 +53,11 @@ impl World {
         self.camera.update(&self.player_1);
     }
 
-    //TODO: STOP REDRAWING EVERY PIXEL EVERY FRAME
-    //implement redraw only for objects
-    //perhaps make own frame and slap stuff on mutably temporarily?
-    //make initial draw for just background
     fn draw(&self, frame: &mut [u8]) {
         
         let mut pre_buffer: [[Pixel; 180]; 320] = [[Pixel {x: 0, y: 0, rgba: [255,255,255,255]}; 180]; 320];
 
-        //AAAAAAAAAAAA
+        // grabs pixels from player's display output and assigns them to the pre_buffer
         for pixel in self.player_1.get_pixels(&self.camera, &self.mouse_pos).iter() {
             pre_buffer[pixel.x as usize][pixel.y as usize] = pixel.clone();
         }
@@ -73,23 +65,6 @@ impl World {
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
             let x = (i % 320 as usize) as i16;
             let y = (i / 320 as usize) as i16;
-
-            //let mut rgba = [255,255,255,255];
-
-            //draws a grid (relative to camera!!!)
-            //if ((x + self.camera.x as i16) % 10) == 0 || ((y + self.camera.y as i16) % 10) == 0 {
-            //    rgba = [255,255,255,100];
-            //}
-
-            //draws player by checking if pre_buffer color is not 255, fix later 4 better solution
-            //if pre_buffer[x as usize][y as usize].rgba[1] != 255 {
-            //    rgba =  pre_buffer[x as usize][y as usize].rgba;
-            //}
-
-            //draws mouse position
-            //if x as i32 == self.mouse_pos.0 && y as i32 == self.mouse_pos.1{
-            //    rgba = [0,255,0,255];
-            //}
 
             let rgba = pre_buffer[x as usize][179 - y  as usize].rgba;
 
@@ -200,7 +175,7 @@ fn main() -> Result<(), Error> {
                     None => print!("cheese"),
                     Some(coord) => {
                         world.mouse_pos.0 = (coord.0 / 6.0) as i32;
-                        world.mouse_pos.1 = (coord.1 / 6.0) as i32;
+                        world.mouse_pos.1 = 180 - (coord.1 / 6.0) as i32;
                     },
                 }
             }

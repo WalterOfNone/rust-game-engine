@@ -24,6 +24,7 @@ pub struct Player {
     pub grapple_loc: (i32, i32),
 }
 
+/// World camera, coordinates are the bottom left of camera
 pub struct Camera {
     pub x: i32,
     pub y: i32,
@@ -65,16 +66,25 @@ impl Object for Player {
             }
         }
 
+        //draws cursor position in green
+        block.push(Pixel {
+            x: mouse_pos.0 % 320,
+            y: mouse_pos.1 - 1,
+            rgba: [0,255,0,255],
+        });
+
         //draws grapple spot
         if self.grappled{
             let x_relative = self.grapple_loc.0 - camera.x;
             let y_relative = self.grapple_loc.1 - camera.y;
+
+            //checks if coordinates are in frame
             if x_relative > 0 && x_relative < 320 && y_relative < 180 && y_relative > 0 {
                 block.push(Pixel {
                     x: x_relative,
                     y: y_relative,
                     rgba: [255, 0, 0, 255],
-                })
+                });
             }
         }
 
@@ -83,6 +93,7 @@ impl Object for Player {
         let mut x_diff = (self.coord_x - mouse_pos.0 as f64 - camera.x as f64) as f64;
 
         let mut slope = 1.0;
+
         if self.grappled {
             y_diff = (self.coord_y - self.grapple_loc.1 as f64) as f64;
             x_diff = (self.coord_x - self.grapple_loc.0  as f64) as f64;
@@ -91,36 +102,44 @@ impl Object for Player {
             }
         }
 
+        //angle of the grapple hook relative to the player
         let mut mouse_angle = (y_diff/x_diff).atan();
 
+        //increase the mouse angle by 1 rad to make a full circle
         if x_diff >= 0.0 {
             mouse_angle += 3.141;
         }
 
-        let circ_x = (mouse_angle.cos() * 15.0) + self.coord_x - camera.x as f64;
-        let circ_y = (mouse_angle.sin() * 15.0) + self.coord_y - camera.y as f64;
+        let grapple_hook_x = (mouse_angle.cos() * 15.0) as i32 + self.coord_x as i32 - camera.x;
+        let grapple_hook_y = (mouse_angle.sin() * 15.0) as i32 + self.coord_y as i32 - camera.y;
 
         //draws grapple hook
-        block.push(Pixel {
-            x: circ_x as i32,
-            y: circ_y as i32,
-            rgba: [0, 0, 255, 255],
-        });
+        if grapple_hook_x > 0 && grapple_hook_x < 320 && grapple_hook_y < 180 && grapple_hook_y > 0 {
+            block.push(Pixel {
+                x: grapple_hook_x as i32,
+                y: grapple_hook_y as i32,
+                rgba: [0,0,255,255],
+            });
+        }
 
         //draws grapple hook rope
         if self.grappled {
-            let y_diff_grapple = circ_y - self.grapple_loc.1 as f64;
-            let x_diff_grapple = self.grapple_loc.0 as f64 - circ_x;
+            let grapple_x_diff = self.grapple_loc.0 - grapple_hook_x - camera.x;
+            for mut x in 0..grapple_x_diff.abs() {
+                //goes in opposite direction if grapple spot is left of player
+                if grapple_x_diff < 0 {
+                    x *= -1;
+                }
+                let rope_x = grapple_hook_x as i32 + x;
+                let rope_y = grapple_hook_y as i32 + (x as f64 * slope) as i32;
 
-            println!("Slope: {}", slope);
-            println!("Xdiff: {}", x_diff_grapple);
-
-            for x in 1..x_diff_grapple.abs() as i32 {
-                block.push(Pixel {
-                    x: circ_x as i32 + x,
-                    y: (slope * x as f64) as i32 + circ_y as i32,
-                    rgba: [0, 0, 255, 255],
-                });
+                if rope_x > 0 && rope_x < 320 && rope_y < 180 && rope_y > 0 {
+                    block.push(Pixel {
+                        x: rope_x,
+                        y: rope_y,
+                        rgba: [0,0,255,255],
+                    });
+                }
             }
         }
 
@@ -132,8 +151,8 @@ impl Object for Player {
         self.coord_x += self.velocity_x;
         self.coord_y += self.velocity_y;
 
-        println!("X: {} Y: {}", self.coord_x, self.coord_y);
-        println!("XVEL: {} YVEL: {}", self.velocity_x, self.velocity_y);
+        //println!("X: {} Y: {}", self.coord_x, self.coord_y);
+        //println!("XVEL: {} YVEL: {}", self.velocity_x, self.velocity_y);
 
         //TODO: clean up this mess
         if self.coord_x < 4.0 {
