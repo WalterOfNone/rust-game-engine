@@ -24,7 +24,7 @@ struct World {
     camera: lib::Camera,
     frames: u64,
     start_time: Instant,
-    entities: Vec<Entity>,
+    entities: HashMap<i32, Entity>,
     sprites: HashMap<String, Image>,
 }
 
@@ -48,19 +48,19 @@ impl World {
             mouse_pos: (160, 90),
             frames: 0,
             start_time: Instant::now(),
-            entities: Vec::new(),
+            entities: HashMap::new(),
             sprites: default_images,
         }
     }
 
     fn spawn(&mut self, entity: Entity) {
-        self.entities.push(entity)
+        self.entities.insert(entity.id, entity);
     }
 
     /// Updates world movement
     fn update(&mut self) {
         for entity in self.entities.iter_mut() {
-            entity.update(&self.camera);
+            entity.1.update(&self.camera);
         }
 
         self.player_1.update(&self.camera);
@@ -72,30 +72,30 @@ impl World {
         //Iterates through all visible entities and places visible pixels on pre_buffer
         //TODO: multithread
         for entity in self.entities.iter() {
-            if entity.visible {
-                let x_rel = entity.coord_x as i32 - self.camera.x;
-                let y_rel = entity.coord_y as i32 - self.camera.y;
+            if entity.1.visible {
+                let x_rel = entity.1.coord_x as i32 - self.camera.x;
+                let y_rel = entity.1.coord_y as i32 - self.camera.y;
 
                 let mut sprite_start_x = 0;
                 if x_rel < 0 {
                     sprite_start_x = x_rel.abs();
                 }
-                let mut sprite_end_x = self.sprites[&entity.sprite].sprite_width as i32 - 0;
+                let mut sprite_end_x = self.sprites[&entity.1.sprite].sprite_width as i32 - 0;
                 if sprite_end_x + x_rel + 1 > GAME_WIDTH as i32 {
-                    sprite_end_x = self.sprites[&entity.sprite].sprite_width as i32 - 0 - ((sprite_end_x + x_rel) - GAME_WIDTH as i32);
+                    sprite_end_x = self.sprites[&entity.1.sprite].sprite_width as i32 - 0 - ((sprite_end_x + x_rel) - GAME_WIDTH as i32);
                 }
                 //println!("sprite_end_x: {}", sprite_end_x);
                 let mut sprite_start_y: i32 = 0;
                 if y_rel < 0 {
                     sprite_start_y = y_rel.abs();
                 }
-                let mut sprite_end_y = self.sprites[&entity.sprite].sprite_height as i32 - 0;
+                let mut sprite_end_y = self.sprites[&entity.1.sprite].sprite_height as i32 - 0;
                 if sprite_end_y + y_rel + 1 > GAME_HEIGHT as i32 {
                     //perhaps change from -1 to - 0 here?
-                    sprite_end_y = self.sprites[&entity.sprite].sprite_height as i32 - 1 - ((sprite_end_y + y_rel) - GAME_HEIGHT as i32);
+                    sprite_end_y = self.sprites[&entity.1.sprite].sprite_height as i32 - 1 - ((sprite_end_y + y_rel) - GAME_HEIGHT as i32);
                 }
 
-                let sprite = &self.sprites[&entity.sprite];
+                let sprite = &self.sprites[&entity.1.sprite];
 
                 for x in (sprite_start_x + x_rel)..(sprite_end_x + x_rel) {
                     for y in (sprite_start_y + y_rel)..(sprite_end_y + y_rel) {
@@ -135,12 +135,9 @@ impl World {
 //Blends alpha between 2 pixels quickly. Not a correct implementation, as it ignores the background pixel's alpha.
 fn blend_alpha_fast(&src: &[u8; 4], &dst: &[u8; 4]) -> [u8; 4] {
     let mut blended = [255 as u8; 4];
-    blended[0] = (dst[0] as f64 * (dst[3] as f64) / 255.0) as u8
-        + (src[0] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
-    blended[1] = (dst[1] as f64 * (dst[3] as f64) / 255.0) as u8
-        + (src[1] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
-    blended[2] = (dst[2] as f64 * (dst[3] as f64) / 255.0) as u8
-        + (src[2] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
+    blended[0] = (dst[0] as f64 * (dst[3] as f64) / 255.0) as u8 + (src[0] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
+    blended[1] = (dst[1] as f64 * (dst[3] as f64) / 255.0) as u8 + (src[1] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
+    blended[2] = (dst[2] as f64 * (dst[3] as f64) / 255.0) as u8 + (src[2] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
     blended[3] = 255;
 
     return blended;
@@ -179,7 +176,8 @@ fn main() -> Result<(), Error> {
 
     let mut world = World::new();
 
-    let steve = Entity {
+    let player = Entity {
+        id: 0,
         visible: true,
         collision: false,
         hitbox_x: 16.0,
@@ -190,7 +188,7 @@ fn main() -> Result<(), Error> {
         sprite_state: 0,
     };
 
-    world.spawn(steve);
+    world.spawn(player);
     
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame

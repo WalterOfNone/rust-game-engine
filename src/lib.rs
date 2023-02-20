@@ -10,6 +10,7 @@ pub trait Object {
 }
 
 pub struct Entity {
+    pub id: i32,
     pub visible: bool,
     pub collision: bool,
     pub hitbox_x: f64,
