@@ -25,7 +25,7 @@ prerequisites:
 
 rust & cargo installed
 
-```git clone https://git.unl.edu/lquattrocchi2/rust-game-engine```
+```git clone https://git.unl.edu/lquattrocchi2/2dplatformer```
 
 ```cargo build --release```
 
