@@ -1,12 +1,68 @@
 use png::{ColorType, Decoder};
 use std::fs::File;
+use std::collections::HashMap;
 const GAME_HEIGHT: i32 = 240;
 const GAME_WIDTH: i32 = 426;
+use std::cell::RefCell;
+
+pub trait ComponentVec {
+    fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn push_none(&mut self);
+}
+
+impl<T: 'static> ComponentVec for RefCell<Vec<Option<T>>> {
+    // Same as before
+    fn as_any(&self) -> &dyn std::any::Any {
+        self as &dyn std::any::Any
+    }
+
+    // Same as before
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self as &mut dyn std::any::Any
+    }
+
+    fn push_none(&mut self) {
+        // `&mut self` already guarantees we have
+        // exclusive access to self so can use `get_mut` here
+        // which avoids any runtime checks.
+        self.get_mut().push(None)
+    }
+}
+
+
+/// Rectangular collider with optional collision
+///
+/// Boundary box defined as x1, y1, x2, y2
+pub struct Collider {
+    pub rigid_body: bool,
+    pub active: bool,
+    pub collision: bool,
+    pub boundary: (f64, f64, f64, f64),
+    pub vel_x: f64,
+    pub vel_y: f64,
+}
+
+pub struct Sprite {
+    pub visible: bool,
+    pub sprite: &'static str,
+    pub sprite_state: u32,
+}
+
+pub struct Text {
+    pub text: &'static str,
+    pub speed: f64,
+}
+
+pub struct Coordinates {
+    pub coord_x: f64,
+    pub coord_y: f64,
+}
 
 pub trait Object {
     /// Returns pixels relative to the current camera
     fn get_pixels(&self, camera: &Camera, mouse_pos: &(i32, i32)) -> Vec<Pixel>;
-    fn update(&mut self, camera: &Camera);
+    fn update(&mut self, camera: &Camera, renderable_entities: &mut HashMap<i32,i32>);
 }
 
 pub struct Entity {
@@ -101,11 +157,13 @@ impl Object for Entity {
         return block;
     }
     //TODO: make this actually function
-    fn update(&mut self, camera: &Camera) {
+    fn update(&mut self, camera: &Camera, renderable_entities: &mut HashMap<i32,i32>) {
         if (self.coord_x as i32) < camera.x || (self.coord_x as i32) > camera.x + GAME_WIDTH {
             self.visible = true;
+            renderable_entities.insert(self.id, self.id);
         } else {
             self.visible = true;
+            renderable_entities.insert(self.id, self.id);
         }
     }
 }
@@ -136,13 +194,13 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn update(&mut self, player: &Player) {
+    pub fn update(&mut self, player: &Entity) {
         if (player.coord_y as i32) > 90 {
             self.y = player.coord_y as i32 - 90;
         } else {
             self.y = 0;
         }
-
+        
         if player.coord_x as i32 > 160 {
             self.x = player.coord_x as i32 - 160;
         } else {
@@ -268,7 +326,7 @@ impl Object for Player {
         return block;
     }
 
-    fn update(&mut self, camera: &Camera) {
+    fn update(&mut self, camera: &Camera, renderable_entities: &mut HashMap<i32,i32>) {
         //gravity and ground
         self.coord_x += self.velocity_x;
         self.coord_y += self.velocity_y;
