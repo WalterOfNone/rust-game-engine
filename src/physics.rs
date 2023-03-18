@@ -14,7 +14,7 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
     
     let zip = colliders.iter_mut().zip(coordinates.iter_mut());
     let mut entities: Vec<(&mut Collider, &mut Coordinates)> = zip.filter_map(|(health, name)| Some((health.as_mut()?, name.as_mut()?))).collect();
-    //todo: zip two together, filter map, collect perhaps?
+    //todo: make the id_grid have objects properly placed in their respective boxes
     
     //Likely inefficient, test if you see this
     for (index, (collider, coordinate)) in  entities.iter().enumerate() {
@@ -61,26 +61,24 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
                                     if depth_x > 0.0 {
                                         println!("LEFT COLLISION");
                                         entities[0].0.vel_x = 0.0;
-                                        
+                                        entities[0].1.coord_x = entities[element.clone()].1.coord_x + entities[element.clone()].0.boundary.2;
                                     } else {
                                         println!("RIGHT COLLISION");
                                         entities[0].0.vel_x = 0.0;
-                                        //right col
+                                        entities[0].1.coord_x = entities[element.clone()].1.coord_x - entities[0].0.boundary.2 - 0.01;
                                     }
                                 } else {
                                     if depth_y > 0.0 {
                                         println!("BOTTOM COLLISION");
                                         entities[0].0.vel_y = 0.0;
-                                        //top
+                                        entities[0].1.coord_y = entities[element.clone()].1.coord_y + entities[element.clone()].0.boundary.3 + 0.01;
                                     } else {
                                         println!("TOP COLLISION");
                                         entities[0].0.vel_y = 0.0;
                                         entities[0].1.coord_y = entities[element.clone()].1.coord_y - entities[0].0.boundary.3;
-                                        //bottom
                                     }
                                 }
-                            }
-                            println!("COLLISION 2 DROPPED");   
+                            } 
                         } else {
                             entities[0].1.coord_x += entities[0].0.vel_x;
                             entities[0].1.coord_y += entities[0].0.vel_y;
@@ -95,7 +93,4 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
             }
         }
     }
-    
-    
-    //println!("id_grid: {:?}", id_grid);
 }
