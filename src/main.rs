@@ -291,7 +291,7 @@ fn main() -> Result<(), Error> {
     world.new_entity();
     world.add_component_to_entity(0, Sprite {
         visible: true,
-        sprite: "coord.png",
+        sprite: "steve.png",
         sprite_state: 0,
     });
     world.add_component_to_entity(0, Coordinates { 
@@ -301,9 +301,9 @@ fn main() -> Result<(), Error> {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 16.0, 16.0),
+        boundary: (0.0, 0.0, 9.0, 9.0),
         vel_x: 0.0,
-        vel_y: 0.15,
+        vel_y: 0.12,
     });
         
     world.new_entity();
@@ -345,17 +345,17 @@ fn main() -> Result<(), Error> {
     world.new_entity();
     world.add_component_to_entity(3, Sprite {
         visible: true,
-        sprite: "steve.png",
+        sprite: "platform.png",
         sprite_state: 0,
     });
     world.add_component_to_entity(3, Coordinates { 
-        coord_x: 0.0,
+        coord_x: 40.0,
         coord_y: 0.0});
     world.add_component_to_entity(3, Collider {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 426.0, 4.0),
+        boundary: (0.0, 0.0, 32.0, 6.0),
         vel_x: 0.00,
         vel_y: 0.00,
     });
