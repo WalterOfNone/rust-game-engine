@@ -393,7 +393,7 @@ fn main() -> Result<(), Error> {
         vel_y: 0.00,
     });
         
-    for i in 5..10000 {
+    for i in 5..1000 {
        world.new_entity();
         world.add_component_to_entity(i, Sprite {
             visible: true,
