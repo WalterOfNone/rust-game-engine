@@ -24,7 +24,9 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
             let col = x_rel / 71;
             let row = y_rel / 48;
             //println!("num: {}", index);
-            id_grid[col as usize][row as usize].push(index.clone());
+            if row < 6 && col < 6 {
+                id_grid[col as usize][row as usize].push(index.clone());
+            }
     }
     
     for x in 0..6 {
