@@ -2,20 +2,28 @@ pub mod lib;
 pub mod worldinit;
 pub mod physics;
 
+mod input;
+
+use input::{GameInput, UserInput};
+use input::handle_input;
+use gilrs::{Gilrs, Button};
 use gametesting::Collider;
 use gametesting::Coordinates;
 use gametesting::Sprite;
+use gilrs::EventType::{ButtonPressed, ButtonReleased};
+
 use lib::{Camera, Entity, Image, Object, Pixel, ComponentVec};
 use log::error;
 use physics::simulate_frame;
 use pixels::wgpu::{PowerPreference, RequestAdapterOptions};
 use pixels::{Error, PixelsBuilder, SurfaceTexture};
 use worldinit::load_images;
+use std::any::Any;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::cell::Ref;
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::Instant; 
 use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -26,7 +34,7 @@ use winit_input_helper::WinitInputHelper;
 const GAME_HEIGHT: usize = 240;
 const GAME_WIDTH: usize = 426;
 
-struct World {
+pub struct World {
     player_1: lib::Player,
     mouse_pos: (i32, i32),
     camera: lib::Camera,
@@ -36,6 +44,7 @@ struct World {
     sprites: HashMap<String, Image>,
     entities_count: usize,
     component_vecs: Vec<Box<dyn ComponentVec>>,
+    input_map: HashMap<input::GameInput, input::UserInput>,
 }
 
 impl World {
@@ -61,6 +70,7 @@ impl World {
             sprites: default_images,
             entities_count: 0,
             component_vecs: Vec::new(),
+            input_map: HashMap::new(),
         }
     }
     
@@ -275,6 +285,11 @@ fn main() -> Result<(), Error> {
         .build()?;
 
     let mut world = World::new();
+    
+    world.input_map.insert(GameInput::PlayerLeft, UserInput::KeyboardInput(VirtualKeyCode::A));
+    world.input_map.insert(GameInput::PlayerRight, UserInput::KeyboardInput(VirtualKeyCode::D));
+    world.input_map.insert(GameInput::PlayerUp, UserInput::KeyboardInput(VirtualKeyCode::W));
+    world.input_map.insert(GameInput::PlayerDown, UserInput::KeyboardInput(VirtualKeyCode::S));
 
     let player = Entity {
         id: 0,
@@ -362,6 +377,14 @@ fn main() -> Result<(), Error> {
         
     world.spawn(player);
     
+    let mut gilrs = Gilrs::new().unwrap();
+    
+    let mut active_gamepad = None;
+    
+    for (_id, gamepad) in gilrs.gamepads() {
+        println!("{} is {:?}", gamepad.name(), gamepad.power_info());
+    }   
+    
     event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
@@ -375,51 +398,34 @@ fn main() -> Result<(), Error> {
                 return;
             }
         }
-
+        
+        let mut gamepad_events: (Vec<Button>, Vec<Button>)  = (Vec::new(), Vec::new());
+        while let Some(gilrs::Event { id, event, time }) = gilrs.next_event() {
+            //println!("{:?} New event from {}: {:?}", time, id, event);
+            match event {
+                ButtonPressed(button, code) => gamepad_events.0.push(button),
+                ButtonReleased(button, code) => gamepad_events.1.push(button),
+                _ => {},
+            }
+            active_gamepad = Some(id);
+        }
+        
+        if let Some(gamepad) = active_gamepad.map(|id| gilrs.gamepad(id)) {
+            //println!("Button South is pressed (XBox - A, PS - X)");
+            handle_input(&mut world, &input, Some(&gamepad), &gamepad_events);
+        } else {
+            handle_input(&mut world, &input, None, &gamepad_events);
+        }
+        
         // I should probably figure out a better way to do things than this but oh well for now
-        // perhaps separate file to handle these inputs?
+        // perhaps separate file to handle these inputs? //no
         if input.update(&event) {
+            
+            //println!("event: {:?}", input);
             // Close events
             if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
                 *control_flow = ControlFlow::Exit;
                 return;
-            }
-
-            if input.key_pressed(VirtualKeyCode::W) && world.player_1.grounded {
-                world.player_1.velocity_y += 1.5;
-                world.player_1.grounded = false;
-            }
-
-            if input.key_held(VirtualKeyCode::S) || input.quit() {
-                world.player_1.velocity_y -= 0.1;
-            }
-
-            if input.key_held(VirtualKeyCode::A) || input.quit() {
-                if world.player_1.velocity_x <= -0.5 && world.player_1.velocity_x <= 0.0 {
-                    world.player_1.velocity_x = -0.5;
-                } else {
-                    world.player_1.velocity_x -= 0.5;
-                }
-            }
-
-            if input.key_released(VirtualKeyCode::A) {
-                if world.player_1.velocity_x >= 0.5 {
-                    world.player_1.velocity_x += 0.5;
-                }
-            }
-
-            if input.key_held(VirtualKeyCode::D) || input.quit() {
-                if world.player_1.velocity_x <= 0.5 && world.player_1.velocity_x >= 0.0 {
-                    world.player_1.velocity_x = 0.5;
-                } else if world.player_1.velocity_x <= 0.5 {
-                    world.player_1.velocity_x += 0.5;
-                }
-            }
-
-            if input.key_released(VirtualKeyCode::D) {
-                if world.player_1.velocity_x >= 0.5 {
-                    world.player_1.velocity_x += 0.5;
-                }
             }
 
             // Resize the window
@@ -427,32 +433,10 @@ fn main() -> Result<(), Error> {
                 pixels.resize_surface(size.width, size.height);
             }
 
-            let mouse_diff = input.mouse_diff();
-            if mouse_diff != (0.0, 0.0) {
-                match input.mouse() {
-                    None => print!("Something with the mouse became unholy! Check line 303 for more details! :)"),
-                    Some(coord) => {
-                        world.mouse_pos.0 = (coord.0 / 6.0) as i32;
-                        world.mouse_pos.1 = 240 - (coord.1 / 6.0) as i32;
-                    }
-                }
-            }
-
-            if input.mouse_pressed(0) {
-                world.player_1.grappled = true;
-                world.player_1.grapple_loc = (
-                    world.mouse_pos.0 + world.camera.x,
-                    world.mouse_pos.1 + world.camera.y,
-                );
-            }
-
-            if input.mouse_released(0) {
-                world.player_1.grappled = false;
-            }
-
             // Update internal state and request a redraw
             world.update();
             window.request_redraw();
         }
+        
     });
 }
