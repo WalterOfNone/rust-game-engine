@@ -182,6 +182,7 @@ impl World {
         for (sprite, coordinates) in iter
         {
             if sprite.visible {
+                let sprite = &self.sprites[sprite.sprite];
                 let x_rel = coordinates.coord_x as i32 - self.camera.x;
                 let y_rel = coordinates.coord_y as i32 - self.camera.y;
 
@@ -189,36 +190,35 @@ impl World {
                 if x_rel < 0 {
                     sprite_start_x = x_rel.abs();
                 }
-                let mut sprite_end_x = self.sprites[sprite.sprite].sprite_width as i32 - 0;
+                let mut sprite_end_x = sprite.sprite_width as i32 - 0;
                 if sprite_end_x + x_rel + 1 > GAME_WIDTH as i32 {
-                    sprite_end_x = self.sprites[sprite.sprite].sprite_width as i32 - 0 - ((sprite_end_x + x_rel) - GAME_WIDTH as i32);
+                    sprite_end_x = sprite.sprite_width as i32 - 0 - ((sprite_end_x + x_rel) - GAME_WIDTH as i32);
                 }
                 //println!("sprite_end_x: {}", sprite_end_x);
                 let mut sprite_start_y: i32 = 0;
                 if y_rel < 0 {
                     sprite_start_y = y_rel.abs();
                 }
-                let mut sprite_end_y = self.sprites[sprite.sprite].sprite_height as i32 - 0;
+                let mut sprite_end_y = sprite.sprite_height as i32 - 0;
                 if sprite_end_y + y_rel + 1 > GAME_HEIGHT as i32 {
                     //perhaps change from -1 to - 0 here?
-                    sprite_end_y = self.sprites[sprite.sprite].sprite_height as i32 - 1 - ((sprite_end_y + y_rel) - GAME_HEIGHT as i32);
+                    sprite_end_y = sprite.sprite_height as i32 - 1 - ((sprite_end_y + y_rel) - GAME_HEIGHT as i32);
                 }
-
-                let sprite = &self.sprites[sprite.sprite];
 
                 for x in (sprite_start_x + x_rel)..(sprite_end_x + x_rel) {
                     for y in (sprite_start_y + y_rel)..(sprite_end_y + y_rel) {
-                        if sprite.bytes[((x - x_rel + sprite.sprite_width as i32 * (y - y_rel)) * 4+ 3) as usize] == 255 {
+                        let location = (x - x_rel + sprite.sprite_width as i32 * (y - y_rel)) * 4;
+                        if sprite.bytes[(location + 3) as usize] == 255 {
                             //perhaps calc pixel location once, then add 1,2,3 for rgb value later?
-                            pre_buffer[x as usize][y as usize][0] = sprite.bytes[((x - x_rel + sprite.sprite_width as i32 * (y - y_rel))* 4 + 0)as usize];
-                            pre_buffer[x as usize][y as usize][1] = sprite.bytes[((x - x_rel + sprite.sprite_width as i32 * (y - y_rel))* 4 + 1)as usize];
-                            pre_buffer[x as usize][y as usize][2] = sprite.bytes[((x - x_rel+ sprite.sprite_width as i32 * (y - y_rel))* 4 + 2)as usize];
+                            pre_buffer[x as usize][y as usize][0] = sprite.bytes[location as usize];
+                            pre_buffer[x as usize][y as usize][1] = sprite.bytes[(location + 1 ) as usize];
+                            pre_buffer[x as usize][y as usize][2] = sprite.bytes[(location + 2 ) as usize];
                             pre_buffer[x as usize][y as usize][3] = 255;
-                        } else if sprite.bytes[((x - x_rel+ sprite.sprite_width as i32 * (y - y_rel))* 4+ 3) as usize] == 0 {
+                        } else if sprite.bytes[(location + 3) as usize] == 0 {
                             //adds no pixel
                         } else {
                             let src: &[u8; 4] = &pre_buffer[x as usize][y as usize][0..4].try_into().unwrap();
-                            let dst = &sprite.bytes[((x - x_rel + sprite.sprite_width as i32 * (y - y_rel))* 4+ 0) as usize..((x - x_rel + sprite.sprite_width as i32 * (y - y_rel)) * 4 + 4)as usize].try_into().unwrap();
+                            let dst = &sprite.bytes[location as usize..(location + 4) as usize].try_into().unwrap();
                             let blended = blend_alpha_fast(src, dst);
                             pre_buffer[x as usize][y as usize][0] = blended[0];
                             pre_buffer[x as usize][y as usize][1] = blended[1];
@@ -374,6 +374,44 @@ fn main() -> Result<(), Error> {
         vel_x: 0.00,
         vel_y: 0.00,
     });
+        
+    world.new_entity();
+    world.add_component_to_entity(4, Sprite {
+        visible: true,
+        sprite: "floor.png",
+        sprite_state: 0,
+    });
+    world.add_component_to_entity(4, Coordinates { 
+        coord_x: 80.0,
+        coord_y: 0.0});
+    world.add_component_to_entity(4, Collider {
+        rigid_body: true,
+        active: true,
+        collision: true,
+        boundary: (0.0, 0.0, 256.0, 16.0),
+        vel_x: 0.00,
+        vel_y: 0.00,
+    });
+        
+    for i in 5..10000 {
+       world.new_entity();
+        world.add_component_to_entity(i, Sprite {
+            visible: true,
+            sprite: "floor.png",
+            sprite_state: 0,
+        });
+        world.add_component_to_entity(i, Coordinates { 
+            coord_x: 480.0,
+            coord_y: 0.0});
+        world.add_component_to_entity(i, Collider {
+            rigid_body: true,
+            active: true,
+            collision: true,
+            boundary: (0.0, 0.0, 256.0, 16.0),
+            vel_x: 0.00,
+            vel_y: 0.00,
+        }); 
+    }
         
     world.spawn(player);
     
