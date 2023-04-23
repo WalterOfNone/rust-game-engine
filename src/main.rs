@@ -319,6 +319,7 @@ fn main() -> Result<(), Error> {
         boundary: (0.0, 0.0, 9.0, 9.0),
         vel_x: 0.0,
         vel_y: 0.12,
+        grounded: None,
     });
         
     world.new_entity();
@@ -337,6 +338,7 @@ fn main() -> Result<(), Error> {
         boundary: (0.0, 0.0, 16.0, 16.0),
         vel_x: 0.00,
         vel_y: 0.00,
+        grounded: None,
     });
         
     world.new_entity();
@@ -355,6 +357,7 @@ fn main() -> Result<(), Error> {
         boundary: (0.0, 0.0, 16.0, 16.0),
         vel_x: 0.00,
         vel_y: 0.00,
+        grounded: None,
     });
         
     world.new_entity();
@@ -373,6 +376,7 @@ fn main() -> Result<(), Error> {
         boundary: (0.0, 0.0, 32.0, 6.0),
         vel_x: 0.00,
         vel_y: 0.00,
+        grounded: None,
     });
         
     world.new_entity();
@@ -391,9 +395,10 @@ fn main() -> Result<(), Error> {
         boundary: (0.0, 0.0, 256.0, 16.0),
         vel_x: 0.00,
         vel_y: 0.00,
+        grounded: None,
     });
         
-    for i in 5..1000 {
+    for i in 5..6 {
        world.new_entity();
         world.add_component_to_entity(i, Sprite {
             visible: true,
@@ -410,6 +415,7 @@ fn main() -> Result<(), Error> {
             boundary: (0.0, 0.0, 256.0, 16.0),
             vel_x: 0.00,
             vel_y: 0.00,
+            grounded: None,
         }); 
     }
         
@@ -475,6 +481,5 @@ fn main() -> Result<(), Error> {
             world.update();
             window.request_redraw();
         }
-        
     });
 }

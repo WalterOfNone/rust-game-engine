@@ -1,8 +1,10 @@
 use std::borrow::BorrowMut;
 use std::thread;
 use std::sync::{Arc, RwLock};
-use gametesting::Collider;
-use gametesting::Coordinates;
+use gametesting::Collision;
+
+use crate::Collider;
+use crate::Coordinates;
 
 use crate::{Entity, Camera};
 use std::time::Instant;
@@ -64,16 +66,20 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
                                         //println!("LEFT COLLISION");
                                         entities[0].0.vel_x = 0.0;
                                         entities[0].1.coord_x = entities[element.clone()].1.coord_x + entities[element.clone()].0.boundary.2;
+                                        entities[0].0.grounded = Some(Collision::Left);
                                     } else {
                                         //println!("RIGHT COLLISION");
                                         entities[0].0.vel_x = 0.0;
                                         entities[0].1.coord_x = entities[element.clone()].1.coord_x - entities[0].0.boundary.2 - 0.01;
+                                        entities[0].0.grounded = Some(Collision::Right);
                                     }
                                 } else {
                                     if depth_y > 0.0 {
                                         //println!("BOTTOM COLLISION");
                                         entities[0].0.vel_y = 0.0;
                                         entities[0].1.coord_y = entities[element.clone()].1.coord_y + entities[element.clone()].0.boundary.3 + 0.01;
+                                        entities[0].0.grounded = Some(Collision::Down);
+                                        //println!("GROUNDED");
                                     } else {
                                         //println!("TOP COLLISION");
                                         entities[0].0.vel_y = 0.0;
@@ -85,11 +91,13 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
                             entities[0].1.coord_x += entities[0].0.vel_x;
                             entities[0].1.coord_y += entities[0].0.vel_y;
                             entities[0].0.vel_y -= 0.0001;
+                            //entities[0].0.grounded = None;
                         }
                     } else {
                         entities[0].1.coord_x += entities[0].0.vel_x;
                         entities[0].1.coord_y += entities[0].0.vel_y;
                         entities[0].0.vel_y -= 0.0001;
+                        //entities[0].0.grounded = None;
                     }
                 }
             }

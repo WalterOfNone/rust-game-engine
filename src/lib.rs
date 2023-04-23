@@ -41,6 +41,14 @@ pub struct Collider {
     pub boundary: (f64, f64, f64, f64),
     pub vel_x: f64,
     pub vel_y: f64,
+    pub grounded: Option<Collision>
+}
+
+pub enum Collision {
+    Left,
+    Right,
+    Down,
+    Up,
 }
 
 pub struct Sprite {
