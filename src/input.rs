@@ -1,9 +1,11 @@
-use gametesting::Collider;
+use gametesting::{Collider, Player};
 use gilrs::ev::state::ButtonData;
 use winit_input_helper::WinitInputHelper;
 use std::collections::HashMap;
 use std::clone::Clone;
 use gilrs::{Gamepad, EventType, Button};
+
+use gametesting::Collision;
 
 use crate::World;
 
@@ -27,15 +29,11 @@ impl<'a> InputHandler<'a> {
                 match userinput {
                     UserInput::ControllerInput(button) => {
                         if let Some(active_pad) = self.gamepad {
-                        match input_state {
-                            InputState::Held => return active_pad.is_pressed(button.clone()),
-                            InputState::Pressed => {
-                                return self.gamepad_events.0.contains(button);    
-                            },
-                            InputState::Released => {
-                                return self.gamepad_events.1.contains(button);
-                            },
-                        }
+                            match input_state {
+                                InputState::Held => return active_pad.is_pressed(button.clone()),
+                                InputState::Pressed => return self.gamepad_events.0.contains(button),
+                                InputState::Released => return self.gamepad_events.1.contains(button),
+                            }
                         }
                     },
                     UserInput::KeyboardInput(keycode) => {
@@ -101,8 +99,22 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
             player_collider.vel_x = 0.00;
         }
         
-        if handler.check(&GameInput::PlayerUp, InputState::Pressed) {
+        if handler.check(&GameInput::PlayerUp, InputState::Pressed) && player_collider.grounded.is_some() {
             player_collider.vel_y = 0.1;
+            player_collider.grounded = None;
+            //println!("UNGROUNDED");
+            match player_collider.grounded {
+                Some(Collision::Left) => {
+                    player_collider.vel_y += 0.07;
+                    player_collider.vel_x += 0.05;
+                },
+                Some(Collision::Right) => {
+                    player_collider.vel_y += 0.07;
+                    player_collider.vel_x -= 0.05;
+                },
+                Some(Collision::Down) => player_collider.vel_y += 0.1,
+                _ => {},
+            }
         }
         
         if handler.check(&GameInput::PlayerDown, InputState::Held) {
