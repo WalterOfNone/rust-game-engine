@@ -13,14 +13,12 @@ use gametesting::Coordinates;
 use gametesting::Sprite;
 use gilrs::EventType::{ButtonPressed, ButtonReleased};
 
-use lib::{Camera, Entity, Image, Object, Pixel, ComponentVec};
+use lib::{Camera, Entity, Image, Object, ComponentVec};
 use log::error;
 use physics::simulate_frame;
 use pixels::wgpu::{PowerPreference, RequestAdapterOptions};
 use pixels::{Error, PixelsBuilder, SurfaceTexture};
 use worldinit::load_images;
-use std::any::Any;
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::cell::Ref;
@@ -32,9 +30,6 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit::window::{CursorIcon, Fullscreen};
 use winit_input_helper::WinitInputHelper;
-
-const GAME_HEIGHT: usize = 240;
-const GAME_WIDTH: usize = 426;
 
 pub struct World {
     player_1: lib::Player,
