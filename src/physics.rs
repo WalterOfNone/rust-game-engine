@@ -2,9 +2,9 @@ use std::borrow::BorrowMut;
 use std::thread;
 use std::sync::{Arc, RwLock};
 use gametesting::Collision;
+use gametesting::Coordinates;
 
-use crate::Collider;
-use crate::Coordinates;
+use gametesting::Collider;
 
 use crate::{Entity, Camera};
 use std::time::Instant;
@@ -90,13 +90,13 @@ pub fn simulate_frame(last_updated: &Instant, colliders: &mut RefMut<Vec<Option<
                         } else {
                             entities[0].1.coord_x += entities[0].0.vel_x;
                             entities[0].1.coord_y += entities[0].0.vel_y;
-                            entities[0].0.vel_y -= 0.0001;
+                            entities[0].0.vel_y -= 0.00000;
                             //entities[0].0.grounded = None;
                         }
                     } else {
                         entities[0].1.coord_x += entities[0].0.vel_x;
                         entities[0].1.coord_y += entities[0].0.vel_y;
-                        entities[0].0.vel_y -= 0.0001;
+                        entities[0].0.vel_y -= 0.00000;
                         //entities[0].0.grounded = None;
                     }
                 }

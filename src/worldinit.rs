@@ -1,4 +1,5 @@
 use crate::Image;
+use core::slice;
 use std::collections::HashMap;
 use std::fs;
 
@@ -9,11 +10,15 @@ pub fn load_images() -> HashMap<String, Image> {
 
     for path in paths {
         let path_string = path.unwrap().path().into_os_string().into_string().unwrap();
-        let path_vec: Vec<&str> = path_string.split("_").collect();
+        if &path_string[path_string.len()-3..path_string.len()] == "png"{
+            let path_vec: Vec<&str> = path_string.split(".").collect();
 
-        let image = Image::new(String::from(format!("{}",&path_string)), path_vec[1].parse::<u32>().unwrap());
+            let image = Image::new(String::from(format!("{}",&path_vec[0])));
         
-        images.insert(format!("{}.png", path_vec[0].replace("sprites/","")), image);
+            images.insert(format!("{}", path_vec[0].replace("sprites/","")), image);
+            
+            println!("peng");
+        }
     }
     if cfg!(debug_assertions) {
         println!("Images Loaded!");

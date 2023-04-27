@@ -84,7 +84,7 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
     
     if let Some(player_collider) = player {
         if handler.check(&GameInput::PlayerLeft, InputState::Held) {
-            player_collider.vel_x = -0.03;
+            player_collider.vel_x = -0.01;
         }
         
         if handler.check(&GameInput::PlayerLeft, InputState::Released) {
@@ -92,7 +92,7 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         }
         
         if handler.check(&GameInput::PlayerRight, InputState::Held) {
-            player_collider.vel_x = 0.03;
+            player_collider.vel_x = 0.01;
         }
         
         if handler.check(&GameInput::PlayerRight, InputState::Released) {
@@ -120,6 +120,7 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         if handler.check(&GameInput::PlayerDown, InputState::Held) {
             player_collider.vel_y = -0.1;
         }
+        
     }
     
 
