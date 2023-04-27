@@ -228,20 +228,21 @@ fn main() -> Result<(), Error> {
     world.new_entity();
     world.add_component_to_entity(0, Sprite {
         visible: true,
-        fade: true,
+        fade: false,
         sprite: "robot",
         sprite_state: (3,1),
         time_left: 0.0,
+        reversed: true,
     });
     world.add_component_to_entity(0, Coordinates { 
         coord_x: 20.0,
-        coord_y: 0.0
+        coord_y: 50.0,
     });
     world.add_component_to_entity(0, Collider {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 9.0, 9.0),
+        boundary: (0.0, 0.0, 16.0, 9.0),
         vel_x: 0.0,
         vel_y: 0.0,
         grounded: None,
@@ -254,10 +255,11 @@ fn main() -> Result<(), Error> {
         sprite: "robot",
         sprite_state: (0,1),
         time_left: 0.0,
+        reversed: false,
     });
     world.add_component_to_entity(1, Coordinates { 
         coord_x: 50.0,
-        coord_y: 150.0
+        coord_y: 50.0
     });
     world.add_component_to_entity(1, Collider {
         rigid_body: true,
@@ -276,6 +278,7 @@ fn main() -> Result<(), Error> {
         sprite: "robot",
         sprite_state: (3,1),
         time_left: 0.0,
+        reversed: false,
     });
     world.add_component_to_entity(2, Coordinates { 
         coord_x: 200.0,
@@ -294,10 +297,11 @@ fn main() -> Result<(), Error> {
     world.new_entity();
     world.add_component_to_entity(3, Sprite {
         visible: true,
-        fade: true,
+        fade: false,
         sprite: "robot",
         sprite_state: (0,0),
         time_left: 0.0,
+        reversed: false,
     });
     world.add_component_to_entity(3, Coordinates { 
         coord_x: 20.0,
@@ -313,6 +317,8 @@ fn main() -> Result<(), Error> {
         grounded: None,
     });
         
+    
+        
     world.new_entity();
     world.add_component_to_entity(4, Sprite {
         visible: true,
@@ -320,6 +326,7 @@ fn main() -> Result<(), Error> {
         sprite: "waterfall",
         sprite_state: (5,0),
         time_left: 0.0,
+        reversed: false,
     });
     world.add_component_to_entity(4, Coordinates { 
         coord_x: 50.0,
@@ -335,7 +342,31 @@ fn main() -> Result<(), Error> {
         grounded: None,
     });
         
-
+    for i in 5..100 {
+        world.new_entity();
+        world.add_component_to_entity(i, Sprite {
+            visible: true,
+            fade: false,
+            sprite: "robot",
+            sprite_state: (0,0),
+            time_left: 0.0,
+            reversed: false,
+        });
+        world.add_component_to_entity(i, Coordinates { 
+            coord_x: (4.0 * i as f64),
+            coord_y: 0.0
+        });
+        world.add_component_to_entity(i, Collider {
+            rigid_body: true,
+            active: true,
+            collision: true,
+            boundary: (0.0, 0.0, 16.0, 16.0),
+            vel_x: 0.0,
+            vel_y: 0.0,
+            grounded: None,
+        });
+    }
+        
     world.spawn(player);
     
     let mut gilrs = Gilrs::new().unwrap();
