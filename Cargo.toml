@@ -15,7 +15,6 @@ gilrs = "0.10.1"
 png = "0.17.8"
 bincode = "1.3.3"
 serde = { version = "1.0.160", features = ["derive"] }
-rayon = "1.7.0"
 
 [profile.dev-info]
 inherits = "release"

@@ -11,7 +11,6 @@ const GAME_HEIGHT: usize = 240;
 const GAME_WIDTH: usize = 426;
 use crate::Image;
 use crate::Camera;
-use rayon::prelude::*;
 
 pub fn render_frame(
     last_updated: &Instant,
@@ -21,12 +20,12 @@ pub fn render_frame(
     frame: &mut [u8],
     camera: &Camera,
 ) {
-    let mut pre_buffer: [[[u8; 4]; GAME_HEIGHT]; GAME_WIDTH] = [[[100, 100, 100, 255]; GAME_HEIGHT]; GAME_WIDTH];    
+        let mut pre_buffer: Vec<u8> = vec![100; GAME_WIDTH * GAME_HEIGHT * 4];    
         
         let zip = sprites.iter_mut().zip(coordinates.iter());
-        let mut iter = zip.filter_map(|(health, name)| Some((health.as_mut()?, name.as_ref()?)));
+        let mut both = zip.filter_map(|(health, name)| Some((health.as_mut()?, name.as_ref()?)));
         
-        for (sprite, coordinates) in iter.borrow_mut()
+        for (sprite, coordinates) in both.borrow_mut()
         {
             if sprite.visible {
                 let image = &images[sprite.sprite];
@@ -62,6 +61,7 @@ pub fn render_frame(
 
                 for x in (sprite_start_x + x_rel)..(sprite_end_x + x_rel - 0) {
                     for y in (sprite_start_y + y_rel)..(sprite_end_y + y_rel) {
+                        let index = ((y * GAME_WIDTH as i32 + x) * 4) as usize;
                         let mut location = ((x - x_rel + image.image_width as i32 * (y - y_rel)) * 4) as usize;
                         if sprite.reversed {
                             location = ((x_rel - x - 1+ image.image_width as i32 * (y - y_rel + 1)) * 4) as usize;
@@ -70,24 +70,24 @@ pub fn render_frame(
                         if !sprite.fade{
                             if image.bytes[location + 3] == 255 {
                                 //Copies pixel value directly from sprite
-                                pre_buffer[x as usize][y as usize].copy_from_slice(&image.bytes[location..(location + 4)]);
+                                pre_buffer[index..index + 4].copy_from_slice(&image.bytes[location..(location + 4)]);
                             } else if image.bytes[location + 3] == 0 {
                                 //Adds no pixel
                             } else {
                                 //Adds pixel with alpha calculation
-                                let src: &[u8; 4] = &pre_buffer[x as usize][y as usize][0..4].try_into().unwrap();
+                                let src: &[u8; 4] = &pre_buffer[index..index + 4].try_into().unwrap();
                                 let dst = &image.bytes[location..(location + 4)].try_into().unwrap();
                                 let blended = blend_alpha_fast(src, dst);
-                                pre_buffer[x as usize][y as usize] = blended;
+                                pre_buffer[index..index + 4].copy_from_slice(&blended);
                             }
                         } else {
-                            let src: &[u8; 4] = &pre_buffer[x as usize][y as usize ][0..4].try_into().unwrap();
+                            let src: &[u8; 4] = &pre_buffer[index..index + 4].try_into().unwrap();
                             let mut dst: [u8; 4] = [0; 4];
                             let slice = &image.bytes[location..(location + 3)];
                             dst[0..3].copy_from_slice(slice);
                             dst[3] = (sprite.time_left * image.bytes[location + 3] as f64 / 10.0) as u8;
                             let blended = blend_alpha_fast(src, &dst);
-                            pre_buffer[x as usize][y as usize] = blended;
+                            pre_buffer[index..index + 4].copy_from_slice(&blended);
                         }
                     }
                 }
@@ -103,12 +103,14 @@ pub fn render_frame(
 
         //copies pixel array into current frame
         for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
-            let x = (i % GAME_WIDTH as usize) as i16;
-            let y = (i / GAME_WIDTH as usize) as i16;
-
-            let rgba = pre_buffer[x as usize][GAME_HEIGHT - 1 - y as usize];
-
-            pixel.copy_from_slice(&rgba);
+        let x = (i % GAME_WIDTH as usize) as usize;
+        let y = GAME_HEIGHT - 1 - i / GAME_WIDTH as usize;
+        
+        let index = ((y as i32 * GAME_WIDTH as i32 + x as i32) * 4) as usize;
+    
+        let rgba = &pre_buffer[index..index+4];
+    
+        pixel.copy_from_slice(rgba);
         }
 }
 
