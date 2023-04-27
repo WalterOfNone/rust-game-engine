@@ -5,6 +5,7 @@ use std::clone::Clone;
 use gilrs::{Gamepad, Button};
 
 use gametesting::Collision;
+use gametesting::Sprite;
 
 use crate::World;
 
@@ -79,11 +80,14 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         gamepad_events,
     };
     let mut entities = world.borrow_component_vec_mut::<Collider>().unwrap();
+    let mut sprites = world.borrow_component_vec_mut::<Sprite>().unwrap();
     let player = &mut entities[0];
+    let player_sprite = &mut sprites[0];
     
-    if let Some(player_collider) = player {
+    if let (Some(player_collider), Some(sprite)) = (player, player_sprite) {
         if handler.check(&GameInput::PlayerLeft, InputState::Held) {
             player_collider.vel_x = -0.01;
+            sprite.reversed = true;
         }
         
         if handler.check(&GameInput::PlayerLeft, InputState::Released) {
@@ -92,6 +96,7 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         
         if handler.check(&GameInput::PlayerRight, InputState::Held) {
             player_collider.vel_x = 0.01;
+            sprite.reversed = false;
         }
         
         if handler.check(&GameInput::PlayerRight, InputState::Released) {

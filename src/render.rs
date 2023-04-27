@@ -11,6 +11,7 @@ const GAME_HEIGHT: usize = 240;
 const GAME_WIDTH: usize = 426;
 use crate::Image;
 use crate::Camera;
+use rayon::prelude::*;
 
 pub fn render_frame(
     last_updated: &Instant,
@@ -20,10 +21,7 @@ pub fn render_frame(
     frame: &mut [u8],
     camera: &Camera,
 ) {
-    let mut pre_buffer: [[[u8; 4]; GAME_HEIGHT]; GAME_WIDTH] = [[[100, 100, 100, 255]; GAME_HEIGHT]; GAME_WIDTH];
-        //Iterates through all visible entities and places visible pixels on pre_buffer
-        //TODO: multithread
-    
+    let mut pre_buffer: [[[u8; 4]; GAME_HEIGHT]; GAME_WIDTH] = [[[100, 100, 100, 255]; GAME_HEIGHT]; GAME_WIDTH];    
         
         let zip = sprites.iter_mut().zip(coordinates.iter());
         let mut iter = zip.filter_map(|(health, name)| Some((health.as_mut()?, name.as_ref()?)));
@@ -32,9 +30,8 @@ pub fn render_frame(
         {
             if sprite.visible {
                 let image = &images[sprite.sprite];
-                //let image = sprites[sprite.sprite];
-                //Sets where the sprite exists relative to the camera
                 
+                //Sets where the sprite exists relative to the camera
                 let mut x_rel = coordinates.coord_x as i32 - camera.x;
                 let mut y_rel = coordinates.coord_y as i32 - camera.y;
                 
@@ -62,13 +59,14 @@ pub fn render_frame(
                 
                 x_rel -= (sprite.sprite_state.0 * image.sprite_width) as i32;
                 y_rel -= (sprite.sprite_state.1 * image.sprite_height) as i32;
-                //println!("{}", y_rel);
 
                 for x in (sprite_start_x + x_rel)..(sprite_end_x + x_rel - 0) {
                     for y in (sprite_start_y + y_rel)..(sprite_end_y + y_rel) {
-                        //can't I just memcpy the whole damn thing??? //no
-                        let location = ((x - x_rel + image.image_width as i32 * (y - y_rel)) * 4) as usize;
-                        //println!("{}", location);
+                        let mut location = ((x - x_rel + image.image_width as i32 * (y - y_rel)) * 4) as usize;
+                        if sprite.reversed {
+                            location = ((x_rel - x - 1+ image.image_width as i32 * (y - y_rel + 1)) * 4) as usize;
+                        }
+                        //println!("{}", location)
                         if !sprite.fade{
                             if image.bytes[location + 3] == 255 {
                                 //Copies pixel value directly from sprite
@@ -80,22 +78,16 @@ pub fn render_frame(
                                 let src: &[u8; 4] = &pre_buffer[x as usize][y as usize][0..4].try_into().unwrap();
                                 let dst = &image.bytes[location..(location + 4)].try_into().unwrap();
                                 let blended = blend_alpha_fast(src, dst);
-                                pre_buffer[x as usize][y as usize][0] = blended[0];
-                                pre_buffer[x as usize][y as usize][1] = blended[1];
-                                pre_buffer[x as usize][y as usize][2] = blended[2];
-                                pre_buffer[x as usize][y as usize][3] = blended[3];
+                                pre_buffer[x as usize][y as usize] = blended;
                             }
                         } else {
                             let src: &[u8; 4] = &pre_buffer[x as usize][y as usize ][0..4].try_into().unwrap();
-                            let mut dst: [u8; 4] = [0; 4]; // Initialize the array to zero
+                            let mut dst: [u8; 4] = [0; 4];
                             let slice = &image.bytes[location..(location + 3)];
                             dst[0..3].copy_from_slice(slice);
                             dst[3] = (sprite.time_left * image.bytes[location + 3] as f64 / 10.0) as u8;
                             let blended = blend_alpha_fast(src, &dst);
-                            pre_buffer[x as usize][y as usize][0] = blended[0];
-                            pre_buffer[x as usize][y as usize][1] = blended[1];
-                            pre_buffer[x as usize][y as usize][2] = blended[2];
-                            pre_buffer[x as usize][y as usize][3] = blended[3];
+                            pre_buffer[x as usize][y as usize] = blended;
                         }
                     }
                 }

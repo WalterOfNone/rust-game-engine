@@ -58,6 +58,7 @@ pub struct Sprite {
     pub sprite_state: (u32, u32),
     pub time_left: f64,
     pub fade: bool,
+    pub reversed: bool,
 }
 
 pub struct Text {
