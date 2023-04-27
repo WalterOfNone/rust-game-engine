@@ -1,5 +1,4 @@
 use crate::Image;
-use core::slice;
 use std::collections::HashMap;
 use std::fs;
 

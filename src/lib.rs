@@ -1,4 +1,3 @@
-use png::{ColorType, Decoder};
 use std::fs::File;
 use std::collections::HashMap;
 const GAME_HEIGHT: i32 = 240;

@@ -1,6 +1,3 @@
-use std::borrow::BorrowMut;
-use std::thread;
-use std::sync::{Arc, RwLock};
 use gametesting::Collision;
 use gametesting::Coordinates;
 

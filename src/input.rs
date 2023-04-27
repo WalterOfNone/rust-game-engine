@@ -1,9 +1,8 @@
-use gametesting::{Collider, Player};
-use gilrs::ev::state::ButtonData;
+use gametesting::Collider;
 use winit_input_helper::WinitInputHelper;
 use std::collections::HashMap;
 use std::clone::Clone;
-use gilrs::{Gamepad, EventType, Button};
+use gilrs::{Gamepad, Button};
 
 use gametesting::Collision;
 
