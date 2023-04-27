@@ -4,6 +4,8 @@ use std::collections::HashMap;
 const GAME_HEIGHT: i32 = 240;
 const GAME_WIDTH: i32 = 426;
 use std::cell::RefCell;
+use std::io::Read;
+use serde::{Serialize, Deserialize};
 
 pub trait ComponentVec {
     fn as_any(&self) -> &dyn std::any::Any;
@@ -54,7 +56,9 @@ pub enum Collision {
 pub struct Sprite {
     pub visible: bool,
     pub sprite: &'static str,
-    pub sprite_state: u32,
+    pub sprite_state: (u32, u32),
+    pub time_left: f64,
+    pub fade: bool,
 }
 
 pub struct Text {
@@ -91,15 +95,25 @@ pub struct Image {
     pub sprite_height: u32,
     pub sprite_width: u32,
     pub image_width: u32,
+    pub row_length: Vec<u32>,
+    pub row_time: Vec<f64>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct ImageInfo {
+    pub row_length: Vec<u32>,
+    pub row_time: Vec<f64>,
+    pub sprite_height: u32,
+    pub sprite_width: u32,
 }
 
 impl Image {
     //Creates a new Image with a given file name, and amount of divions in the spritesheet
-    pub fn new(path: String, sprite_width: u32) -> Self {
+    pub fn new(path: String) -> Self {
         //Excellent code
-        let path_name = format!("{}", path);
+        let png_name = format!("{}.png", path);
 
-        let decoder = png::Decoder::new(File::open(path_name).unwrap());
+        let decoder = png::Decoder::new(File::open(png_name).unwrap());
         let mut reader = decoder.read_info().unwrap();
         let mut buf = vec![0; reader.output_buffer_size()];
         let info = reader.next_frame(&mut buf).unwrap();
@@ -108,13 +122,23 @@ impl Image {
         let mut bytes = bytes_arr.to_vec();
 
         flip_pixels_x_axis(&mut bytes, info.width as usize, info.height as usize);
+        
+        let info_name = format!("{}.info", path);
+
+        let mut file = File::open(info_name).unwrap();
+        let mut contents: Vec<u8> = Vec::new();
+        file.read_to_end(&mut contents).unwrap();
+    
+        let image_info: ImageInfo = bincode::deserialize(&contents[..]).unwrap();
 
         Self {
             name: path,
             bytes: bytes,
-            sprite_height: info.height,
+            sprite_height: image_info.sprite_height,
             image_width: info.width,
-            sprite_width: sprite_width,
+            sprite_width: image_info.sprite_width,
+            row_length: image_info.row_length,
+            row_time: image_info.row_time,
         }
     }
 }
