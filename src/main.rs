@@ -1,9 +1,10 @@
 pub mod lib;
 pub mod worldinit;
 pub mod physics;
+mod render;
 
 mod input;
-
+//mod render;
 use input::{GameInput, UserInput};
 use input::handle_input;
 use gilrs::{Gilrs, Button};
@@ -19,6 +20,7 @@ use pixels::wgpu::{PowerPreference, RequestAdapterOptions};
 use pixels::{Error, PixelsBuilder, SurfaceTexture};
 use worldinit::load_images;
 use std::any::Any;
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::cell::Ref;
@@ -170,87 +172,12 @@ impl World {
         simulate_frame(&self.last_updated, &mut colliders, &mut coordinates, &self.renderable_entities, &self.camera);
     }
 
-    fn draw(&self, frame: &mut [u8]) {
-        let mut pre_buffer: [[[u8; 4]; GAME_HEIGHT]; GAME_WIDTH] = [[[100, 100, 100, 255]; GAME_HEIGHT]; GAME_WIDTH];
-        //Iterates through all visible entities and places visible pixels on pre_buffer
-        //TODO: multithread
-        let sprites = self.borrow_component_vec::<Sprite>().unwrap();
+    fn draw(&mut self, frame: &mut [u8]) {    
+        let mut sprites = self.borrow_component_vec_mut::<Sprite>().unwrap();
         let coordinates = self.borrow_component_vec::<Coordinates>().unwrap();
-        let zip = sprites.iter().zip(coordinates.iter());
-        let iter = zip.filter_map(|(health, name)| Some((health.as_ref()?, name.as_ref()?)));
         
-        for (sprite, coordinates) in iter
-        {
-            if sprite.visible {
-                let sprite = &self.sprites[sprite.sprite];
-                let x_rel = coordinates.coord_x as i32 - self.camera.x;
-                let y_rel = coordinates.coord_y as i32 - self.camera.y;
-
-                let mut sprite_start_x = 0;
-                if x_rel < 0 {
-                    sprite_start_x = x_rel.abs();
-                }
-                let mut sprite_end_x = sprite.sprite_width as i32 - 0;
-                if sprite_end_x + x_rel + 1 > GAME_WIDTH as i32 {
-                    sprite_end_x = sprite.sprite_width as i32 - 0 - ((sprite_end_x + x_rel) - GAME_WIDTH as i32);
-                }
-                //println!("sprite_end_x: {}", sprite_end_x);
-                let mut sprite_start_y: i32 = 0;
-                if y_rel < 0 {
-                    sprite_start_y = y_rel.abs();
-                }
-                let mut sprite_end_y = sprite.sprite_height as i32 - 0;
-                if sprite_end_y + y_rel + 1 > GAME_HEIGHT as i32 {
-                    //perhaps change from -1 to - 0 here?
-                    sprite_end_y = sprite.sprite_height as i32 - 1 - ((sprite_end_y + y_rel) - GAME_HEIGHT as i32);
-                }
-
-                for x in (sprite_start_x + x_rel)..(sprite_end_x + x_rel) {
-                    for y in (sprite_start_y + y_rel)..(sprite_end_y + y_rel) {
-                        let location = (x - x_rel + sprite.sprite_width as i32 * (y - y_rel)) * 4;
-                        if sprite.bytes[(location + 3) as usize] == 255 {
-                            //perhaps calc pixel location once, then add 1,2,3 for rgb value later?
-                            pre_buffer[x as usize][y as usize][0] = sprite.bytes[location as usize];
-                            pre_buffer[x as usize][y as usize][1] = sprite.bytes[(location + 1 ) as usize];
-                            pre_buffer[x as usize][y as usize][2] = sprite.bytes[(location + 2 ) as usize];
-                            pre_buffer[x as usize][y as usize][3] = 255;
-                        } else if sprite.bytes[(location + 3) as usize] == 0 {
-                            //adds no pixel
-                        } else {
-                            let src: &[u8; 4] = &pre_buffer[x as usize][y as usize][0..4].try_into().unwrap();
-                            let dst = &sprite.bytes[location as usize..(location + 4) as usize].try_into().unwrap();
-                            let blended = blend_alpha_fast(src, dst);
-                            pre_buffer[x as usize][y as usize][0] = blended[0];
-                            pre_buffer[x as usize][y as usize][1] = blended[1];
-                            pre_buffer[x as usize][y as usize][2] = blended[2];
-                            pre_buffer[x as usize][y as usize][3] = blended[3];
-                        }
-                    }
-                }
-            }
-        }
-
-        //copies pixel array into current frame
-        for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
-            let x = (i % GAME_WIDTH as usize) as i16;
-            let y = (i / GAME_WIDTH as usize) as i16;
-
-            let rgba = pre_buffer[x as usize][GAME_HEIGHT - 1 - y as usize];
-
-            pixel.copy_from_slice(&rgba);
-        }
+        render::render_frame(&self.last_updated, &mut sprites, &coordinates, &self.sprites, frame, &self.camera);
     }
-}
-
-// Blends alpha between 2 pixels quickly. Not a correct implementation, as it ignores the background pixel's alpha.
-fn blend_alpha_fast(&src: &[u8; 4], &dst: &[u8; 4]) -> [u8; 4] {
-    let mut blended = [255 as u8; 4];
-    blended[0] = (dst[0] as f64 * (dst[3] as f64) / 255.0) as u8 + (src[0] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
-    blended[1] = (dst[1] as f64 * (dst[3] as f64) / 255.0) as u8 + (src[1] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
-    blended[2] = (dst[2] as f64 * (dst[3] as f64) / 255.0) as u8 + (src[2] as f64 * (255.0 - dst[3] as f64) / 255.0) as u8;
-    blended[3] = 255;
-
-    return blended;
 }
 
 fn main() -> Result<(), Error> {
@@ -299,126 +226,121 @@ fn main() -> Result<(), Error> {
         hitbox_y: 16.0,
         coord_x: 0.0,
         coord_y: 0.0,
-        sprite: String::from("steve.png"),
+        sprite: String::from("robot"),
         sprite_state: 0,
     };
     
     world.new_entity();
     world.add_component_to_entity(0, Sprite {
         visible: true,
-        sprite: "steve.png",
-        sprite_state: 0,
+        fade: true,
+        sprite: "robot",
+        sprite_state: (3,1),
+        time_left: 0.0,
     });
     world.add_component_to_entity(0, Coordinates { 
-        coord_x: 50.0,
-        coord_y: 50.0});
+        coord_x: 20.0,
+        coord_y: 0.0
+    });
     world.add_component_to_entity(0, Collider {
         rigid_body: true,
         active: true,
         collision: true,
         boundary: (0.0, 0.0, 9.0, 9.0),
         vel_x: 0.0,
-        vel_y: 0.12,
+        vel_y: 0.0,
         grounded: None,
     });
         
     world.new_entity();
     world.add_component_to_entity(1, Sprite {
         visible: true,
-        sprite: "coord.png",
-        sprite_state: 0,
+        fade: false,
+        sprite: "robot",
+        sprite_state: (0,1),
+        time_left: 0.0,
     });
     world.add_component_to_entity(1, Coordinates { 
         coord_x: 50.0,
-        coord_y: 110.0});
+        coord_y: 150.0
+    });
     world.add_component_to_entity(1, Collider {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 16.0, 16.0),
-        vel_x: 0.00,
-        vel_y: 0.00,
+        boundary: (0.0, 0.0, 9.0, 9.0),
+        vel_x: 0.0,
+        vel_y: 0.0,
         grounded: None,
     });
         
     world.new_entity();
     world.add_component_to_entity(2, Sprite {
         visible: true,
-        sprite: "coord.png",
-        sprite_state: 0,
+        fade: false,
+        sprite: "robot",
+        sprite_state: (3,1),
+        time_left: 0.0,
     });
     world.add_component_to_entity(2, Coordinates { 
-        coord_x: 100.0,
-        coord_y: 50.0});
+        coord_x: 200.0,
+        coord_y: 50.0
+    });
     world.add_component_to_entity(2, Collider {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 16.0, 16.0),
-        vel_x: 0.00,
-        vel_y: 0.00,
+        boundary: (0.0, 0.0, 9.0, 9.0),
+        vel_x: 0.0,
+        vel_y: 0.0,
         grounded: None,
     });
         
     world.new_entity();
     world.add_component_to_entity(3, Sprite {
         visible: true,
-        sprite: "platform.png",
-        sprite_state: 0,
+        fade: true,
+        sprite: "robot",
+        sprite_state: (0,0),
+        time_left: 0.0,
     });
     world.add_component_to_entity(3, Coordinates { 
-        coord_x: 40.0,
-        coord_y: 0.0});
+        coord_x: 20.0,
+        coord_y: 20.0
+    });
     world.add_component_to_entity(3, Collider {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 32.0, 6.0),
-        vel_x: 0.00,
-        vel_y: 0.00,
+        boundary: (0.0, 0.0, 9.0, 9.0),
+        vel_x: 0.0,
+        vel_y: 0.0,
         grounded: None,
     });
         
     world.new_entity();
     world.add_component_to_entity(4, Sprite {
         visible: true,
-        sprite: "floor.png",
-        sprite_state: 0,
+        fade: false,
+        sprite: "waterfall",
+        sprite_state: (5,0),
+        time_left: 0.0,
     });
     world.add_component_to_entity(4, Coordinates { 
-        coord_x: 80.0,
-        coord_y: 0.0});
+        coord_x: 50.0,
+        coord_y: 20.0
+    });
     world.add_component_to_entity(4, Collider {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 256.0, 16.0),
-        vel_x: 0.00,
-        vel_y: 0.00,
+        boundary: (0.0, 0.0, 9.0, 9.0),
+        vel_x: 0.0,
+        vel_y: 0.0,
         grounded: None,
     });
         
-    for i in 5..6 {
-       world.new_entity();
-        world.add_component_to_entity(i, Sprite {
-            visible: true,
-            sprite: "floor.png",
-            sprite_state: 0,
-        });
-        world.add_component_to_entity(i, Coordinates { 
-            coord_x: 480.0,
-            coord_y: 0.0});
-        world.add_component_to_entity(i, Collider {
-            rigid_body: true,
-            active: true,
-            collision: true,
-            boundary: (0.0, 0.0, 256.0, 16.0),
-            vel_x: 0.00,
-            vel_y: 0.00,
-            grounded: None,
-        }); 
-    }
-        
+
     world.spawn(player);
     
     let mut gilrs = Gilrs::new().unwrap();
