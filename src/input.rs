@@ -126,6 +126,4 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         }
         
     }
-    
-
 }

@@ -20,7 +20,7 @@ pub fn render_frame(
     frame: &mut [u8],
     camera: &Camera,
 ) {
-        let mut pre_buffer: Vec<u8> = vec![100; GAME_WIDTH * GAME_HEIGHT * 4];    
+        let mut pre_buffer: Vec<u8> = vec![80; GAME_WIDTH * GAME_HEIGHT * 4]; 
         
         let zip = sprites.iter_mut().zip(coordinates.iter());
         let mut both = zip.filter_map(|(health, name)| Some((health.as_mut()?, name.as_ref()?)));
@@ -123,4 +123,84 @@ fn blend_alpha_fast(&src: &[u8; 4], &dst: &[u8; 4]) -> [u8; 4] {
     blended[3] = 255;
 
     return blended;
+}
+
+pub fn create_textbox(lookuptable: &Image, text: &String) -> Image{
+    if !text.is_ascii() {
+        println!("Invalid String!");
+    }
+    
+    let lookupbytes = &lookuptable.bytes;
+    let mut bytes: Vec<u8> = Vec::new();
+    let mut textbox_width = 0;
+    let mut textbox_height = 2;
+    
+    let words = text.split("\n");
+
+    for line in words.clone() {
+        let line_width = (line.as_bytes().len() * 4) as u32;
+        if line_width > textbox_width {
+            textbox_width = line_width;
+        }
+    }
+    
+    for line in words {
+        let line_width = (line.as_bytes().len() * 4) as u32;
+        for y in 0..7 {
+            for char in line.as_bytes() {
+                let lookup_val = (((char.clone() as u32 - 32) * 12) + (y * lookuptable.image_width) * 4) as usize;
+                //adds that row of the character
+                bytes.extend_from_slice(&lookupbytes[lookup_val..lookup_val+12]);
+                //adds space after character
+                bytes.append(&mut vec![0u8; 4]);
+            }
+            if line_width < textbox_width {
+                    let spacer = textbox_width - line_width;
+                    println!("Spacer: {}", spacer);
+                    bytes.append(&mut vec![0u8; (4*(textbox_width - line_width)) as usize]);
+            }
+        }
+        textbox_height += 7;
+    }
+    textbox_width += 1;
+    
+    let mut textbox_sprite_bytes: Vec<u8> = Vec::new();
+    for y in 0..textbox_height {
+        let horizontal_wall: bool = y == 0 || y == textbox_height - 1;
+        
+        for x in 0..textbox_width {
+            let vertical_wall: bool = x == 0 || x == textbox_width - 1;
+
+            if horizontal_wall && vertical_wall {
+                textbox_sprite_bytes.append(&mut vec![0u8; 4]);
+            } else if vertical_wall || horizontal_wall {
+                textbox_sprite_bytes.append(&mut vec![120,120,120,255]);
+            } else {
+                if x > 0 && x < textbox_width - 1 && y > 0 && y < textbox_height - 1{
+                    let text_x = x - 1;
+                    let text_y = y - 1;
+                    if bytes[((text_x * 4) + text_y * (textbox_width - 1) * 4) as usize + 3] != 0 {
+                        textbox_sprite_bytes.append(&mut vec![0,0,0,255]);
+                    } else {
+                        textbox_sprite_bytes.append(&mut vec![70,70,70,255]);
+                    }
+                } else {
+                    textbox_sprite_bytes.append(&mut vec![255u8; 4]);
+                }
+            }
+
+        }
+    }
+    
+    let textbox_image = Image {
+        name: String::from("textbox"),
+        bytes: textbox_sprite_bytes,
+        sprite_width: textbox_width,
+        sprite_height: textbox_height,
+        image_width: textbox_width,
+        row_time: vec![1.0],
+        row_length: vec![1],
+    };
+    
+    return textbox_image
 }

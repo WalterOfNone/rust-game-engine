@@ -179,11 +179,12 @@ fn main() -> Result<(), Error> {
     env_logger::init();
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
-
+    
+    
     //creates window with specified game width, scales to higher res
     let window = {
         let min_size = LogicalSize::new(426, 240);
-        let size = LogicalSize::new(1920, 1080);
+        let size = LogicalSize::new(2560, 1440);
         WindowBuilder::new()
             .with_title("Verified Game Testing Moment")
             .with_inner_size(size)
@@ -230,7 +231,7 @@ fn main() -> Result<(), Error> {
         visible: true,
         fade: false,
         sprite: "robot",
-        sprite_state: (3,1),
+        sprite_state: (3,0),
         time_left: 0.0,
         reversed: true,
     });
@@ -253,7 +254,7 @@ fn main() -> Result<(), Error> {
         visible: true,
         fade: false,
         sprite: "robot",
-        sprite_state: (0,1),
+        sprite_state: (0,0),
         time_left: 0.0,
         reversed: false,
     });
@@ -276,7 +277,7 @@ fn main() -> Result<(), Error> {
         visible: true,
         fade: false,
         sprite: "robot",
-        sprite_state: (3,1),
+        sprite_state: (3,0),
         time_left: 0.0,
         reversed: false,
     });
@@ -288,7 +289,7 @@ fn main() -> Result<(), Error> {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 9.0, 9.0),
+        boundary: (0.0, 0.0, 16.0, 9.0),
         vel_x: 0.0,
         vel_y: 0.0,
         grounded: None,
@@ -360,13 +361,32 @@ fn main() -> Result<(), Error> {
             rigid_body: true,
             active: true,
             collision: true,
-            boundary: (0.0, 0.0, 16.0, 16.0),
+            boundary: (0.0, 0.0, 16.0, 10.0),
             vel_x: 0.0,
             vel_y: 0.0,
             grounded: None,
         });
     }
         
+    world.new_entity();
+    world.add_component_to_entity(100, Sprite {
+        visible: true,
+        fade: false,
+        sprite: "textbox",
+        sprite_state: (0,0),
+        time_left: 0.0,
+        reversed: false,
+    });
+    world.add_component_to_entity(100, Coordinates { 
+        coord_x: 250.0,
+        coord_y: 100.0
+    });
+    
+    let lookuptable = world.sprites.get("lookuptable").unwrap();
+    
+    let textbox = render::create_textbox(lookuptable, &String::from("ARBITRARY TEST\nTEST"));
+    world.sprites.insert(textbox.name.clone(), textbox);
+    
     world.spawn(player);
     
     let mut gilrs = Gilrs::new().unwrap();
@@ -409,11 +429,8 @@ fn main() -> Result<(), Error> {
             handle_input(&mut world, &input, None, &gamepad_events);
         }
         
-        // I should probably figure out a better way to do things than this but oh well for now
-        // perhaps separate file to handle these inputs? //no
         if input.update(&event) {
             
-            //println!("event: {:?}", input);
             // Close events
             if input.key_pressed(VirtualKeyCode::Escape) || input.quit() {
                 *control_flow = ControlFlow::Exit;
