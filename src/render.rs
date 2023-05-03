@@ -135,7 +135,9 @@ pub fn create_textbox(lookuptable: &Image, text: &String) -> Image{
     let mut textbox_width = 0;
     let mut textbox_height = 2;
     
-    let words = text.split("\n");
+    let mut words: Vec<&str> = text.split("\n").collect();
+    
+    words.reverse();
 
     for line in words.clone() {
         let line_width = (line.as_bytes().len() * 4) as u32;
