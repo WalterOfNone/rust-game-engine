@@ -128,6 +128,7 @@ fn blend_alpha_fast(&src: &[u8; 4], &dst: &[u8; 4]) -> [u8; 4] {
 pub fn create_textbox(lookuptable: &Image, text: &String) -> Image{
     if !text.is_ascii() {
         println!("Invalid String!");
+        panic!();
     }
     
     let lookupbytes = &lookuptable.bytes;

@@ -110,11 +110,11 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
             match player_collider.grounded {
                 Some(Collision::Left) => {
                     player_collider.vel_y += 0.07;
-                    player_collider.vel_x += 0.05;
+                    player_collider.vel_x += 0.5;
                 },
                 Some(Collision::Right) => {
                     player_collider.vel_y += 0.07;
-                    player_collider.vel_x -= 0.05;
+                    player_collider.vel_x -= 0.5;
                 },
                 Some(Collision::Down) => player_collider.vel_y += 0.1,
                 _ => {},
