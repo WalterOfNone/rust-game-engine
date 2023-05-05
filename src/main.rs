@@ -31,6 +31,11 @@ use winit::window::WindowBuilder;
 use winit::window::{CursorIcon, Fullscreen};
 use winit_input_helper::WinitInputHelper;
 
+use std::time::Duration;
+use rodio::{Decoder, OutputStream, Sink};
+use rodio::source::{SineWave, Source};
+
+
 pub struct World {
     player_1: lib::Player,
     mouse_pos: (i32, i32),
@@ -184,7 +189,7 @@ fn main() -> Result<(), Error> {
     //creates window with specified game width, scales to higher res
     let window = {
         let min_size = LogicalSize::new(426, 240);
-        let size = LogicalSize::new(2560, 1440);
+        let size = LogicalSize::new(1280, 720);
         WindowBuilder::new()
             .with_title("Verified Game Testing Moment")
             .with_inner_size(size)
@@ -204,7 +209,7 @@ fn main() -> Result<(), Error> {
             force_fallback_adapter: false,
             compatible_surface: None,
         })
-        .enable_vsync(false)
+        .enable_vsync(true)
         .build()?;
 
     let mut world = World::new();
@@ -231,9 +236,9 @@ fn main() -> Result<(), Error> {
         visible: true,
         fade: false,
         sprite: "robot",
-        sprite_state: (3,0),
+        sprite_state: (0,1),
         time_left: 0.0,
-        reversed: true,
+        reversed: false,
     });
     world.add_component_to_entity(0, Coordinates { 
         coord_x: 20.0,
@@ -243,7 +248,7 @@ fn main() -> Result<(), Error> {
         rigid_body: true,
         active: true,
         collision: true,
-        boundary: (0.0, 0.0, 16.0, 9.0),
+        boundary: (0.0, 0.0, 16.0, 16.0),
         vel_x: 0.0,
         vel_y: 0.0,
         grounded: None,
@@ -318,50 +323,25 @@ fn main() -> Result<(), Error> {
         grounded: None,
     });
         
-    
-        
-    world.new_entity();
-    world.add_component_to_entity(4, Sprite {
-        visible: true,
-        fade: false,
-        sprite: "waterfall",
-        sprite_state: (5,0),
-        time_left: 0.0,
-        reversed: false,
-    });
-    world.add_component_to_entity(4, Coordinates { 
-        coord_x: 50.0,
-        coord_y: 20.0
-    });
-    world.add_component_to_entity(4, Collider {
-        rigid_body: true,
-        active: true,
-        collision: true,
-        boundary: (0.0, 0.0, 9.0, 9.0),
-        vel_x: 0.0,
-        vel_y: 0.0,
-        grounded: None,
-    });
-        
-    for i in 5..100 {
+    for i in 4..32 {
         world.new_entity();
         world.add_component_to_entity(i, Sprite {
             visible: true,
             fade: false,
-            sprite: "robot",
+            sprite: "tileset",
             sprite_state: (0,0),
-            time_left: 0.0,
+            time_left: 100000.0,
             reversed: false,
         });
         world.add_component_to_entity(i, Coordinates { 
-            coord_x: (4.0 * i as f64),
+            coord_x: (16.0 * i as f64 -80.0),
             coord_y: 0.0
         });
         world.add_component_to_entity(i, Collider {
             rigid_body: true,
             active: true,
             collision: true,
-            boundary: (0.0, 0.0, 16.0, 10.0),
+            boundary: (0.0, 0.0, 16.0, 16.0),
             vel_x: 0.0,
             vel_y: 0.0,
             grounded: None,
@@ -369,7 +349,7 @@ fn main() -> Result<(), Error> {
     }
         
     world.new_entity();
-    world.add_component_to_entity(100, Sprite {
+    world.add_component_to_entity(32, Sprite {
         visible: true,
         fade: false,
         sprite: "textbox",
@@ -377,14 +357,45 @@ fn main() -> Result<(), Error> {
         time_left: 0.0,
         reversed: false,
     });
-    world.add_component_to_entity(100, Coordinates { 
+    world.add_component_to_entity(32, Coordinates { 
         coord_x: 250.0,
         coord_y: 100.0
     });
     
+    world.new_entity();
+    world.add_component_to_entity(32, Sprite {
+        visible: true,
+        fade: false,
+        sprite: "tileset",
+        sprite_state: (0,0),
+        time_left: 10000.0,
+        reversed: false,
+    });
+    world.add_component_to_entity(32, Coordinates { 
+        coord_x: 100.0,
+        coord_y: 50.0
+    });
+    world.add_component_to_entity(32, Collider {
+            rigid_body: true,
+            active: true,
+            collision: true,
+            boundary: (0.0, 0.0, 16.0, 16.0),
+            vel_x: 0.0,
+            vel_y: 0.0,
+            grounded: None,
+        });
+    
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let sink = Sink::try_new(&stream_handle).unwrap();
+    
+    // Add a dummy source of the sake of the example.
+    let source = SineWave::new(18000.0).take_duration(Duration::from_secs_f32(10.25)).amplify(100.90);
+    //sink.append(source);
+    
+    
     let lookuptable = world.sprites.get("lookuptable").unwrap();
     
-    let textbox = render::create_textbox(lookuptable, &String::from("ARBITRARY TEST\nTEST"));
+    let textbox = render::create_textbox(lookuptable, &String::from("\n\n"));
     world.sprites.insert(textbox.name.clone(), textbox);
     
     world.spawn(player);
