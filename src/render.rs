@@ -64,7 +64,7 @@ pub fn render_frame(
                         let index = ((y * GAME_WIDTH as i32 + x) * 4) as usize;
                         let mut location = ((x - x_rel + image.image_width as i32 * (y - y_rel)) * 4) as usize;
                         if sprite.reversed {
-                            location = ((x_rel - x - 1+ image.image_width as i32 * (y - y_rel + 1)) * 4) as usize;
+                            location = ((x_rel - x - 1 + image.image_width as i32 * (y - y_rel + 1)) * 4) as usize;
                         }
                         //println!("{}", location)
                         if !sprite.fade{

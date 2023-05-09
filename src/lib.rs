@@ -31,11 +31,11 @@ impl<T: 'static> ComponentVec for RefCell<Vec<Option<T>>> {
     }
 }
 
-
 /// Rectangular collider with optional collision
 ///
 /// Boundary box defined as x1, y1, x2, y2
 pub struct Collider {
+    pub sticky: bool,
     pub rigid_body: bool,
     pub active: bool,
     pub collision: bool,

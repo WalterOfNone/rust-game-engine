@@ -245,6 +245,7 @@ fn main() -> Result<(), Error> {
         coord_y: 50.0,
     });
     world.add_component_to_entity(0, Collider {
+        sticky: false,
         rigid_body: true,
         active: true,
         collision: true,
@@ -268,6 +269,7 @@ fn main() -> Result<(), Error> {
         coord_y: 50.0
     });
     world.add_component_to_entity(1, Collider {
+        sticky: false,
         rigid_body: true,
         active: true,
         collision: true,
@@ -291,6 +293,7 @@ fn main() -> Result<(), Error> {
         coord_y: 50.0
     });
     world.add_component_to_entity(2, Collider {
+        sticky: false,
         rigid_body: true,
         active: true,
         collision: true,
@@ -314,6 +317,7 @@ fn main() -> Result<(), Error> {
         coord_y: 20.0
     });
     world.add_component_to_entity(3, Collider {
+        sticky: false,
         rigid_body: true,
         active: true,
         collision: true,
@@ -338,6 +342,7 @@ fn main() -> Result<(), Error> {
             coord_y: 0.0
         });
         world.add_component_to_entity(i, Collider {
+            sticky: false,
             rigid_body: true,
             active: true,
             collision: true,
@@ -376,10 +381,11 @@ fn main() -> Result<(), Error> {
         coord_y: 50.0
     });
     world.add_component_to_entity(32, Collider {
+        sticky: false,
             rigid_body: true,
             active: true,
             collision: true,
-            boundary: (0.0, 0.0, 16.0, 16.0),
+            boundary: (0.0, 0.0, 240.0, 160.0),
             vel_x: 0.0,
             vel_y: 0.0,
             grounded: None,
