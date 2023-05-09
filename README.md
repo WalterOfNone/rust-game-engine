@@ -32,4 +32,4 @@ rust & cargo installed
 ```cargo run --release```
 
 ## License
-All code and contributions are licensed under GPL v3.0 unless explicitly marked otherwise
+All code and contributions are proprietary unless explicitly marked otherwise
