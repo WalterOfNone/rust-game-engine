@@ -79,6 +79,7 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         gamepad: gamepad,
         gamepad_events,
     };
+    
     let mut entities = world.borrow_component_vec_mut::<Collider>().unwrap();
     let mut sprites = world.borrow_component_vec_mut::<Sprite>().unwrap();
     let player = &mut entities[0];
@@ -102,11 +103,13 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         if handler.check(&GameInput::PlayerRight, InputState::Released) {
             player_collider.vel_x = 0.00;
         }
-        
+        println!("{:?}", player_collider.grounded);
+        //println!("YVEL: {}", player_collider.vel_y);
+        //println!("XVEL: {}", player_collider.vel_x);
         if handler.check(&GameInput::PlayerUp, InputState::Pressed) && player_collider.grounded.is_some() {
-            player_collider.vel_y = 0.1;
-            player_collider.grounded = None;
-            //println!("UNGROUNDED");
+            //player_collider.vel_y = 0.1;
+            //player_collider.grounded = None;
+            
             match player_collider.grounded {
                 Some(Collision::Left) => {
                     player_collider.vel_y += 0.07;
@@ -116,8 +119,10 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
                     player_collider.vel_y += 0.07;
                     player_collider.vel_x -= 0.5;
                 },
-                Some(Collision::Down) => player_collider.vel_y += 0.1,
-                _ => {},
+                Some(Collision::Down) => {
+                    player_collider.vel_y = 0.1;
+                },
+                _ => {println!("HUH")},
             }
         }
         
