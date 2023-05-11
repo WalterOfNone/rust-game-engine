@@ -235,8 +235,8 @@ fn main() -> Result<(), Error> {
     world.add_component_to_entity(0, Sprite {
         visible: true,
         fade: false,
-        sprite: "robot",
-        sprite_state: (0,1),
+        sprite: "tileset",
+        sprite_state: (1,0),
         time_left: 0.0,
         reversed: false,
     });
@@ -259,75 +259,28 @@ fn main() -> Result<(), Error> {
     world.add_component_to_entity(1, Sprite {
         visible: true,
         fade: false,
-        sprite: "robot",
+        sprite: "tileset",
         sprite_state: (0,0),
         time_left: 0.0,
         reversed: false,
     });
     world.add_component_to_entity(1, Coordinates { 
         coord_x: 50.0,
-        coord_y: 50.0
+        coord_y: 16.0
     });
     world.add_component_to_entity(1, Collider {
         sticky: false,
-        rigid_body: true,
-        active: true,
+        rigid_body: false,
+        active: false,
         collision: true,
-        boundary: (0.0, 0.0, 9.0, 9.0),
+        boundary: (0.0, 0.0, 16.0, 16.0),
         vel_x: 0.0,
         vel_y: 0.0,
         grounded: None,
     });
         
-    world.new_entity();
-    world.add_component_to_entity(2, Sprite {
-        visible: true,
-        fade: false,
-        sprite: "robot",
-        sprite_state: (3,0),
-        time_left: 0.0,
-        reversed: false,
-    });
-    world.add_component_to_entity(2, Coordinates { 
-        coord_x: 200.0,
-        coord_y: 50.0
-    });
-    world.add_component_to_entity(2, Collider {
-        sticky: false,
-        rigid_body: true,
-        active: true,
-        collision: true,
-        boundary: (0.0, 0.0, 16.0, 9.0),
-        vel_x: 0.0,
-        vel_y: 0.0,
-        grounded: None,
-    });
         
-    world.new_entity();
-    world.add_component_to_entity(3, Sprite {
-        visible: true,
-        fade: false,
-        sprite: "robot",
-        sprite_state: (0,0),
-        time_left: 0.0,
-        reversed: false,
-    });
-    world.add_component_to_entity(3, Coordinates { 
-        coord_x: 20.0,
-        coord_y: 20.0
-    });
-    world.add_component_to_entity(3, Collider {
-        sticky: false,
-        rigid_body: true,
-        active: true,
-        collision: true,
-        boundary: (0.0, 0.0, 9.0, 9.0),
-        vel_x: 0.0,
-        vel_y: 0.0,
-        grounded: None,
-    });
-        
-    for i in 4..32 {
+    for i in 2..28 {
         world.new_entity();
         world.add_component_to_entity(i, Sprite {
             visible: true,
@@ -343,8 +296,8 @@ fn main() -> Result<(), Error> {
         });
         world.add_component_to_entity(i, Collider {
             sticky: false,
-            rigid_body: true,
-            active: true,
+            rigid_body: false,
+            active: false,
             collision: true,
             boundary: (0.0, 0.0, 16.0, 16.0),
             vel_x: 0.0,
@@ -354,7 +307,7 @@ fn main() -> Result<(), Error> {
     }
         
     world.new_entity();
-    world.add_component_to_entity(32, Sprite {
+    world.add_component_to_entity(28, Sprite {
         visible: true,
         fade: false,
         sprite: "textbox",
@@ -362,34 +315,10 @@ fn main() -> Result<(), Error> {
         time_left: 0.0,
         reversed: false,
     });
-    world.add_component_to_entity(32, Coordinates { 
+    world.add_component_to_entity(28, Coordinates { 
         coord_x: 250.0,
         coord_y: 100.0
     });
-    
-    world.new_entity();
-    world.add_component_to_entity(32, Sprite {
-        visible: true,
-        fade: false,
-        sprite: "tileset",
-        sprite_state: (0,0),
-        time_left: 10000.0,
-        reversed: false,
-    });
-    world.add_component_to_entity(32, Coordinates { 
-        coord_x: 100.0,
-        coord_y: 50.0
-    });
-    world.add_component_to_entity(32, Collider {
-        sticky: false,
-            rigid_body: true,
-            active: true,
-            collision: true,
-            boundary: (0.0, 0.0, 240.0, 160.0),
-            vel_x: 0.0,
-            vel_y: 0.0,
-            grounded: None,
-        });
     
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
@@ -401,7 +330,7 @@ fn main() -> Result<(), Error> {
     
     let lookuptable = world.sprites.get("lookuptable").unwrap();
     
-    let textbox = render::create_textbox(lookuptable, &String::from("\n\n"));
+    let textbox = render::create_textbox(lookuptable, &String::from("TEST"));
     world.sprites.insert(textbox.name.clone(), textbox);
     
     world.spawn(player);
@@ -460,8 +389,10 @@ fn main() -> Result<(), Error> {
             }
 
             // Update internal state and request a redraw
-            world.update();
+            
             window.request_redraw();
         }
+        world.update();
+        println!("NEWFRAME");
     });
 }

@@ -13,20 +13,15 @@ pub trait ComponentVec {
 }
 
 impl<T: 'static> ComponentVec for RefCell<Vec<Option<T>>> {
-    // Same as before
     fn as_any(&self) -> &dyn std::any::Any {
         self as &dyn std::any::Any
     }
 
-    // Same as before
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self as &mut dyn std::any::Any
     }
 
     fn push_none(&mut self) {
-        // `&mut self` already guarantees we have
-        // exclusive access to self so can use `get_mut` here
-        // which avoids any runtime checks.
         self.get_mut().push(None)
     }
 }
@@ -45,6 +40,7 @@ pub struct Collider {
     pub grounded: Option<Collision>
 }
 
+#[derive(Debug)]
 pub enum Collision {
     Left,
     Right,
