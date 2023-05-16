@@ -6,10 +6,12 @@ use std::cell::RefCell;
 use std::io::Read;
 use serde::{Serialize, Deserialize};
 
+
 pub trait ComponentVec {
     fn as_any(&self) -> &dyn std::any::Any;
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
     fn push_none(&mut self);
+    fn set_none(&mut self, index: usize);
 }
 
 impl<T: 'static> ComponentVec for RefCell<Vec<Option<T>>> {
@@ -23,6 +25,10 @@ impl<T: 'static> ComponentVec for RefCell<Vec<Option<T>>> {
 
     fn push_none(&mut self) {
         self.get_mut().push(None)
+    }
+    
+    fn set_none(&mut self, index: usize) {
+        self.get_mut()[index] = None;
     }
 }
 

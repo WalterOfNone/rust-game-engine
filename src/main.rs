@@ -1,9 +1,14 @@
 pub mod lib;
 pub mod worldinit;
 pub mod physics;
+pub mod econtainer;
+pub mod worldgen;
+use worldgen::Tile;
 mod render;
+use std::io::{self, Write};
 
 mod input;
+use econtainer::EContainer;
 //mod render;
 use input::{GameInput, UserInput};
 use input::handle_input;
@@ -12,6 +17,7 @@ use gametesting::Collider;
 use gametesting::Coordinates;
 use gametesting::Sprite;
 use gilrs::EventType::{ButtonPressed, ButtonReleased};
+use worldgen::gen_maze;
 
 use lib::{Camera, Entity, Image, Object, ComponentVec};
 use log::error;
@@ -19,6 +25,7 @@ use physics::simulate_frame;
 use pixels::wgpu::{PowerPreference, RequestAdapterOptions};
 use pixels::{Error, PixelsBuilder, SurfaceTexture};
 use worldinit::load_images;
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::cell::RefMut;
 use std::cell::Ref;
@@ -181,6 +188,32 @@ impl World {
 }
 
 fn main() -> Result<(), Error> {
+    let mut container = EContainer::new();
+    container.new_entity();
+    container.add_component_to_entity(0, 3);
+    container.new_entity();
+    container.add_component_to_entity(1, 5);
+    container.remove_entity(0);
+    
+    println!("{:?}", container.free_entities);
+    
+    let newen = container.new_entity();
+    container.add_component_to_entity(newen, 4);
+    
+    println!("{:?}", container.free_entities);
+    
+    let jod = container.new_entity();
+    container.add_component_to_entity(jod, 300);
+    
+    let mut container_i32 = container.borrow_component_vec_mut::<i32>().unwrap();
+    for num in container_i32.borrow_mut().iter() {
+        println!("{:?}", num);
+    }
+
+    let input = gen_maze(&mut 45, 4, 4, 0.0);
+    print!("input: {:?}", input);
+    //display_tiles(&input).unwrap();
+    
     env_logger::init();
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
@@ -393,6 +426,83 @@ fn main() -> Result<(), Error> {
             window.request_redraw();
         }
         world.update();
-        println!("NEWFRAME");
+        //println!("NEWFRAME");
     });
 }
+
+
+// GPT'd
+pub fn display_tiles(tiles: &Vec<Vec<Option<Tile>>>) -> io::Result<()> {
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
+    for row in tiles {
+        // print the top edge of each tile in the row
+        for tile in row {
+            match tile {
+                Some(t) => {
+                    write!(handle, "+")?;
+
+                    if t.up == 1 {
+                        write!(handle, "----+")?;
+                    } else {
+                        write!(handle, "    +")?;
+                    }
+                },
+                None => {
+                    write!(handle, "+     ")?;
+                },
+            }
+        }
+
+        write!(handle, "\n")?;
+
+        // print the left and right edges of each tile in the row
+        for tile in row {
+            match tile {
+                Some(t) => {
+                    if t.left == 1 {
+                        write!(handle, " ")?;
+                    } else {
+                        write!(handle, "|")?;
+                    }
+
+                    if t.up == 1 {
+                        write!(handle, "  ")?;
+                    } else {
+                        write!(handle, "--")?;
+                    }
+
+                    if t.down == 1 {
+                        write!(handle, "  ")?;
+                    } else {
+                        write!(handle, "--")?;
+                    }
+
+                    if t.right == 1 {
+                        write!(handle, " ")?;
+                    } else {
+                        write!(handle, "|")?;
+                    }
+                },
+                None => {
+                    write!(handle, "      ")?;
+                },
+            }
+        }
+
+        write!(handle, "\n")?;
+    }
+
+    // print the bottom edge of the grid
+    for _ in 0..GRID_SIZE {
+        write!(handle, "+-----")?;
+    }
+
+    write!(handle, "+")?;
+
+    Ok(())
+}
+
+const GRID_SIZE: usize = 4;
+

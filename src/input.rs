@@ -103,7 +103,7 @@ pub fn handle_input(world: &mut World, input: &WinitInputHelper, gamepad: Option
         if handler.check(&GameInput::PlayerRight, InputState::Released) {
             player_collider.vel_x = 0.00;
         }
-        println!("{:?}", player_collider.grounded);
+        //println!("{:?}", player_collider.grounded);
         //println!("YVEL: {}", player_collider.vel_y);
         //println!("XVEL: {}", player_collider.vel_x);
         if handler.check(&GameInput::PlayerUp, InputState::Pressed) && player_collider.grounded.is_some() {
