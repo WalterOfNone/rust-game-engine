@@ -42,6 +42,8 @@ use std::time::Duration;
 use rodio::{Decoder, OutputStream, Sink};
 use rodio::source::{SineWave, Source};
 
+use crate::worldgen::path_maze;
+
 
 pub struct World {
     player_1: lib::Player,
@@ -205,13 +207,25 @@ fn main() -> Result<(), Error> {
     let jod = container.new_entity();
     container.add_component_to_entity(jod, 300);
     
+    
     let mut container_i32 = container.borrow_component_vec_mut::<i32>().unwrap();
+    
     for num in container_i32.borrow_mut().iter() {
         println!("{:?}", num);
     }
 
-    let input = gen_maze(&mut 45, 4, 4, 0.0);
-    print!("input: {:?}", input);
+    let start = Instant::now();
+    let input = gen_maze(&mut 333334456, 50, 50, 0.25);
+    let gen_duration = start.elapsed();
+    let start = Instant::now();
+    let paths = path_maze(&input, &(0, 0), &(49,49));
+    println!("Path length: {}", paths.len());
+    let path_duration = start.elapsed();
+
+    println!("Generation: {:?} Pathing: {:?}", gen_duration, path_duration);
+
+    display_path(50, &paths);
+    //println!("Paths: {:?}", paths);
     //display_tiles(&input).unwrap();
     
     env_logger::init();
@@ -506,3 +520,18 @@ pub fn display_tiles(tiles: &Vec<Vec<Option<Tile>>>) -> io::Result<()> {
 
 const GRID_SIZE: usize = 4;
 
+// Also GPT'd
+fn display_path(grid_size: usize, path: &Vec<(usize, usize)>) {
+    for y in 0..grid_size {
+        for x in 0..grid_size {
+            let position = (x, y);
+            
+            if path.contains(&position) {
+                print!("X");  // Print 'X' for path cell
+            } else {
+                print!(".");  // Print '.' for non-path cell
+            }
+        }
+        println!();  // Move to the next row after printing a complete row
+    }
+}

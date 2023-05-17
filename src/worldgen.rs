@@ -1,7 +1,10 @@
 use rand::prelude::*;
 use rand::rngs::SmallRng;
+use std::arch::x86_64::_SIDD_MASKED_POSITIVE_POLARITY;
 use std::{thread, time};
 use crate::display_tiles;
+use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::cmp::Reverse;
 
 #[derive(Clone, Debug)]
 pub struct Tile {
@@ -16,12 +19,7 @@ pub fn gen_maze(seed: &mut u64, height: usize, width: usize, rand_tiles: f64) ->
     let mut tiles = vec![vec![None; width]; height];
     let mut active: Vec<(usize, usize)> = vec![(0,0)];
 
-    tiles[0][0] = Some(Tile {
-        up: 0,
-        down: 0,
-        left: 0,
-        right: 0,
-        });
+    tiles[0][0] = Some(Tile { up: 0, down: 0, left: 0, right: 0});
 
     while !active.is_empty() {
         //display_tiles(&tiles).unwrap();
@@ -98,4 +96,78 @@ fn get_adjacent_empty(tilepos: (usize, usize), tiles: &Vec<Vec<Option<Tile>>>) -
         }
     }
     return empty_tiles;
+}
+
+// Gets all tiles that a tile at the given position is able to navigate to
+fn get_adjacent_accessible(nodepos: &(usize, usize), nodes: &Vec<Vec<Option<Tile>>>) -> Vec<(usize, usize)> {
+    let mut adjacent_nodes = Vec::new();
+    
+    let tile= nodes[nodepos.0][nodepos.1].as_ref().unwrap();
+    // Adds positions of other nodes to adjacent_nodes if the tile has a path to them
+    if tile.left > 0    {adjacent_nodes.push((nodepos.0 - 1, nodepos.1))};
+    if tile.right > 0   {adjacent_nodes.push((nodepos.0 + 1, nodepos.1))};
+    if tile.up > 0      {adjacent_nodes.push((nodepos.0, nodepos.1 + 1))};
+    if tile.down > 0    {adjacent_nodes.push((nodepos.0, nodepos.1 - 1))};
+    
+    return adjacent_nodes;
+}
+
+// Returns manhattan distance of given points
+fn manhattan_dist(start: &(usize, usize), end: &(usize, usize)) -> usize {
+    return end.0.abs_diff(start.0) + end.1.abs_diff(start.1);
+}
+
+// Returns a vec of node positions that the A* algorithm pathed
+fn reconstruct_path(came_from: &HashMap<(usize, usize), (usize, usize)>, end: (usize, usize)) -> Vec<(usize, usize)> {
+    let mut total_path = Vec::new();
+    let mut current = end.clone();
+    
+    while let Some(&previous_node) = came_from.get(&current) {
+        total_path.insert(0, previous_node);
+        current = previous_node;
+    }
+    
+    total_path.push(end);
+    
+    return total_path;
+}
+
+// Paths maze using A* algorithm
+pub fn path_maze(maze: &Vec<Vec<Option<Tile>>>, start: &(usize, usize), end: &(usize, usize)) -> Vec<(usize, usize)> {
+    let mut open_set: BinaryHeap<(usize, (usize, usize))> = BinaryHeap::new();
+    let mut open_set_set: HashSet<(usize, usize)> = HashSet::new();
+    open_set.push((0, *start));
+    open_set_set.insert(*start);
+    
+    let mut came_from: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
+    
+    let mut g_score: HashMap<(usize, usize), usize> = HashMap::new();
+    g_score.insert(*start, 0);
+    
+    let mut f_score = HashMap::new();
+    f_score.insert(*start, manhattan_dist(&start, &end));
+    
+    while let Some((_, current)) = open_set.pop() {
+        if current == *end {
+            return reconstruct_path(&came_from, current);
+        }
+        
+        for accessible in get_adjacent_accessible(&current, maze) {
+            let tentative_g_score = g_score.get(&current).unwrap_or_else(|| &usize::MAX) + 1;
+            
+            if tentative_g_score < *g_score.get(&accessible).unwrap_or_else(|| &usize::MAX) {
+                came_from.insert(accessible, current);
+                g_score.insert(accessible, tentative_g_score);
+                let heuristic = manhattan_dist(&accessible, end);
+                f_score.insert(accessible, tentative_g_score + heuristic);
+
+                if !open_set_set.contains(&accessible) {
+                    open_set.push((f_score[&accessible], accessible));
+                    open_set_set.insert(accessible);
+                }
+            }
+        }
+    }
+    
+    return Vec::new();
 }
