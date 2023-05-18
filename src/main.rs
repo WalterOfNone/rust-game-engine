@@ -46,12 +46,10 @@ use crate::worldgen::path_maze;
 
 
 pub struct World {
-    player_1: lib::Player,
     mouse_pos: (i32, i32),
     camera: lib::Camera,
     last_updated: Instant,
     renderable_entities: HashMap<i32, i32>, //This is likely not the best data type to be using
-    entities: HashMap<i32, Entity>,
     sprites: HashMap<String, Image>,
     entities_count: usize,
     component_vecs: Vec<Box<dyn ComponentVec>>,
@@ -63,21 +61,10 @@ impl World {
     fn new() -> Self {
         let default_images = load_images();
         Self {
-            player_1: lib::Player {
-                health: 100,
-                coord_x: 20.0,
-                coord_y: 20.0,
-                velocity_x: 0.0,
-                velocity_y: 0.0,
-                grounded: false,
-                grappled: false,
-                grapple_loc: (0, 0),
-            },
             camera: lib::Camera { x: 0, y: 0 },
             mouse_pos: (160, 90),
             last_updated: Instant::now(),
             renderable_entities: HashMap::new(),
-            entities: HashMap::new(),
             sprites: default_images,
             entities_count: 0,
             component_vecs: Vec::new(),
@@ -94,9 +81,6 @@ impl World {
         entity_id
     }
     
-    // We've changed the return type to be a `RefMut`. 
-    // That's what `RefCell` returns when `borow_mut` is used to borrow from the `RefCell`
-    // When `RefMut` is dropped the `RefCell` is alerted that it can be borrowed from again.
     fn borrow_component_vec_mut<ComponentType: 'static>(
         &self,
     ) -> Option<RefMut<Vec<Option<ComponentType>>>> {
@@ -105,17 +89,12 @@ impl World {
                 .as_any()
                 .downcast_ref::<RefCell<Vec<Option<ComponentType>>>>()
             {
-                // Here we use `borrow_mut`. 
-                // If this `RefCell` is already borrowed from this will panic.
                 return Some(component_vec.borrow_mut());
             }
         }
         None
     }
     
-    // We've changed the return type to be a `RefMut`. 
-    // That's what `RefCell` returns when `borow_mut` is used to borrow from the `RefCell`
-    // When `RefMut` is dropped the `RefCell` is alerted that it can be borrowed from again.
     fn borrow_component_vec<ComponentType: 'static>(
         &self,
     ) -> Option<Ref<Vec<Option<ComponentType>>>> {
@@ -124,8 +103,6 @@ impl World {
                 .as_any()
                 .downcast_ref::<RefCell<Vec<Option<ComponentType>>>>()
             {
-                // Here we use `borrow_mut`. 
-                // If this `RefCell` is already borrowed from this will panic.
                 return Some(component_vec.borrow());
             }
         }
@@ -160,20 +137,11 @@ impl World {
         self.component_vecs.push(Box::new(RefCell::new(new_component_vec)));   
     }
         
-    fn spawn(&mut self, entity: Entity) {
-        self.entities.insert(entity.id, entity);
-    }
 
     /// Updates world movement
     fn update(&mut self) {
         self.last_updated = Instant::now();
-        for entity in self.entities.iter_mut() {
-            entity.1.update(&self.camera, &mut self.renderable_entities);
-        }
-
-        self.player_1.update(&self.camera, &mut self.renderable_entities);
-        
-        self.camera.update(&self.entities.get(&0).expect("player gone"));
+        //self.camera.update(&self.entities.get(&0).expect("player gone"));
         
         let mut colliders = self.borrow_component_vec_mut::<Collider>().unwrap();
         let mut coordinates = self.borrow_component_vec_mut::<Coordinates>().unwrap();
@@ -232,7 +200,6 @@ fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     
-    
     //creates window with specified game width, scales to higher res
     let window = {
         let min_size = LogicalSize::new(426, 240);
@@ -266,18 +233,6 @@ fn main() -> Result<(), Error> {
     world.input_map.insert(GameInput::PlayerUp, UserInput::KeyboardInput(VirtualKeyCode::W));
     world.input_map.insert(GameInput::PlayerDown, UserInput::KeyboardInput(VirtualKeyCode::S));
 
-    let player = Entity {
-        id: 0,
-        visible: true,
-        collision: false,
-        hitbox_x: 16.0,
-        hitbox_y: 16.0,
-        coord_x: 0.0,
-        coord_y: 0.0,
-        sprite: String::from("robot"),
-        sprite_state: 0,
-    };
-    
     world.new_entity();
     world.add_component_to_entity(0, Sprite {
         visible: true,
@@ -374,13 +329,10 @@ fn main() -> Result<(), Error> {
     let source = SineWave::new(18000.0).take_duration(Duration::from_secs_f32(10.25)).amplify(100.90);
     //sink.append(source);
     
-    
     let lookuptable = world.sprites.get("lookuptable").unwrap();
     
     let textbox = render::create_textbox(lookuptable, &String::from("TEST"));
     world.sprites.insert(textbox.name.clone(), textbox);
-    
-    world.spawn(player);
     
     let mut gilrs = Gilrs::new().unwrap();
     
@@ -436,7 +388,6 @@ fn main() -> Result<(), Error> {
             }
 
             // Update internal state and request a redraw
-            
             window.request_redraw();
         }
         world.update();
