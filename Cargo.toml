@@ -27,5 +27,5 @@ debug-assertions = true
 debug = false
 strip = false  # Automatically strip symbols from the binary.
 lto = false
-opt-level = 3
+opt-level = 2
 #panic = "abort"

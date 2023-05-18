@@ -52,8 +52,6 @@ impl EContainer {
                 .as_any()
                 .downcast_ref::<RefCell<Vec<Option<ComponentType>>>>()
             {
-                // Here we use `borrow_mut`. 
-                // If this `RefCell` is already borrowed from this will panic.
                 return Some(component_vec.borrow_mut());
             }
         }
@@ -68,8 +66,6 @@ impl EContainer {
                 .as_any()
                 .downcast_ref::<RefCell<Vec<Option<ComponentType>>>>()
             {
-                // Here we use `borrow_mut`. 
-                // If this `RefCell` is already borrowed from this will panic.
                 return Some(component_vec.borrow());
             }
         }

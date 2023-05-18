@@ -215,16 +215,16 @@ fn main() -> Result<(), Error> {
     }
 
     let start = Instant::now();
-    let input = gen_maze(&mut 333334456, 50, 50, 0.25);
+    let input = gen_maze(&mut 3, 10, 40, 0.25);
     let gen_duration = start.elapsed();
     let start = Instant::now();
-    let paths = path_maze(&input, &(0, 0), &(49,49));
+    let paths = path_maze(&input, &(0, 0), &(9,39));
     println!("Path length: {}", paths.len());
     let path_duration = start.elapsed();
 
     println!("Generation: {:?} Pathing: {:?}", gen_duration, path_duration);
 
-    display_path(50, &paths);
+    //display_path(500, &paths);
     //println!("Paths: {:?}", paths);
     //display_tiles(&input).unwrap();
     
@@ -256,7 +256,7 @@ fn main() -> Result<(), Error> {
             force_fallback_adapter: false,
             compatible_surface: None,
         })
-        .enable_vsync(true)
+        .enable_vsync(false)
         .build()?;
 
     let mut world = World::new();
@@ -527,9 +527,9 @@ fn display_path(grid_size: usize, path: &Vec<(usize, usize)>) {
             let position = (x, y);
             
             if path.contains(&position) {
-                print!("X");  // Print 'X' for path cell
+                print!("XX");  // Print 'X' for path cell
             } else {
-                print!(".");  // Print '.' for non-path cell
+                print!("..");  // Print '.' for non-path cell
             }
         }
         println!();  // Move to the next row after printing a complete row
